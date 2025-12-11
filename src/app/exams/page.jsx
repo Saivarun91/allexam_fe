@@ -31,7 +31,7 @@ import { createSlug } from "@/lib/utils";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
- function ExamsPage() {
+ function ExamsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
