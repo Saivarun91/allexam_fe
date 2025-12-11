@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef,Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,7 @@ import { createSlug } from "@/lib/utils";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
-export default function ExamsPage() {
+ function ExamsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -552,5 +552,20 @@ export default function ExamsPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+export default function ExamsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1A73E8] mx-auto mb-4"></div>
+          <p className="text-[#0C1A35]/70">Loading exams...</p>
+        </div>
+      </div>
+    }>
+      <ExamsPageContent />
+    </Suspense>
   );
 }
