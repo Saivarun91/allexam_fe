@@ -1,5 +1,5 @@
 "use client";
-
+import {Suspense} from "react";
 import { useRouter ,useSearchParams} from "next/navigation";
 import Link from "next/link";
 import { Star, Clock, Users, TrendingUp, CheckCircle2, BookOpen, Target, Award } from "lucide-react";
@@ -96,7 +96,7 @@ const examData = {
   }
 };
 
-const ExamDetails = () => {
+const ExamDetailsContent = () => {
   const router = useRouter();
   const searchparams = useSearchParams();
   const provider = searchparams.get('provider');
@@ -170,182 +170,24 @@ const ExamDetails = () => {
 export default ExamDetails;
 
 
-// "use client";
+const ExamDetails = () => {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white">
+        <Header />
+        <div className="container mx-auto px-4 py-20 text-center">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-64 mx-auto mb-4"></div>
+            <div className="h-4 bg-gray-200 rounded w-96 mx-auto"></div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    }>
+      <ExamDetailsContent />
+    </Suspense>
+  );
+};
 
-// import { useEffect, useState } from "react";
-// import { useRouter } from "next/router";
-// import Link from "next/link";
-// import Header from "@/components/layout/Header";
-// import Footer from "@/components/layout/Footer";
-// import { Button } from "@/components/ui/button";
-// import {
-//   Breadcrumb,
-//   BreadcrumbItem,
-//   BreadcrumbLink,
-//   BreadcrumbList,
-//   BreadcrumbPage,
-//   BreadcrumbSeparator,
-// } from "@/components/ui/breadcrumb";
+export default ExamDetails;
 
-// const ExamDetails = () => {
-//   const router = useRouter();
-//   const { provider, examCode } = router.query;
-
-//   const [exam, setExam] = useState(null);
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState(false);
-
-//   // Fetch exam data dynamically from backend
-//   useEffect(() => {
-//     if (!provider || !examCode) return;
-
-//     const fetchExam = async () => {
-//       try {
-//         const res = await fetch(
-//           `${process.env.NEXT_PUBLIC_API_URL}/exams/${provider}/${examCode}/`
-//         );
-//         if (!res.ok) throw new Error("Exam not found");
-//         const data = await res.json();
-//         setExam(data);
-//         setLoading(false);
-//       } catch (err) {
-//         console.error(err);
-//         setError(true);
-//         setLoading(false);
-//       }
-//     };
-
-//     fetchExam();
-//   }, [provider, examCode]);
-
-//   if (loading) {
-//     return (
-//       <div className="min-h-screen flex items-center justify-center text-gray-500">
-//         Loading exam details...
-//       </div>
-//     );
-//   }
-
-//   if (error || !exam) {
-//     return (
-//       <div className="min-h-screen bg-white">
-//         <Header />
-//         <div className="container mx-auto px-4 py-20 text-center">
-//           <h1 className="text-3xl font-bold text-[#0C1A35] mb-4">Exam Not Found</h1>
-//           <p className="text-gray-600 mb-6">
-//             The exam you're looking for doesn't exist or has been moved.
-//           </p>
-//           <Button asChild>
-//             <Link href="/">Return Home</Link>
-//           </Button>
-//         </div>
-//         <Footer />
-//       </div>
-//     );
-//   }
-
-//   const practiceUrl = `/exams/${provider}/${examCode}/practice`;
-
-//   return (
-//     <div className="min-h-screen bg-white">
-//       <Header />
-
-//       <main className="container mx-auto px-4 py-8">
-//         {/* Breadcrumb */}
-//         <Breadcrumb className="mb-6">
-//           <BreadcrumbList>
-//             <BreadcrumbItem>
-//               <BreadcrumbLink asChild>
-//                 <Link href="/">Home</Link>
-//               </BreadcrumbLink>
-//             </BreadcrumbItem>
-//             <BreadcrumbSeparator />
-//             <BreadcrumbItem>
-//               <BreadcrumbLink asChild>
-//                 <Link href={`/exams/${provider}`}>{exam.provider}</Link>
-//               </BreadcrumbLink>
-//             </BreadcrumbItem>
-//             <BreadcrumbSeparator />
-//             <BreadcrumbPage>{exam.code}</BreadcrumbPage>
-//           </BreadcrumbList>
-//         </Breadcrumb>
-
-//         {/* Exam Hero Section */}
-//         <div className="mb-8">
-//           <h1 className="text-3xl font-bold text-[#0C1A35] mb-2">{exam.title}</h1>
-//           <p className="text-muted-foreground">{exam.about}</p>
-//           <div className="flex gap-4 mt-4 flex-wrap">
-//             <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded">{exam.difficulty}</span>
-//             <span className="px-2 py-1 bg-green-100 text-green-800 rounded">{exam.passRate}% pass rate</span>
-//             <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded">{exam.totalQuestions} questions</span>
-//           </div>
-//           <div className="mt-6">
-//             <Button asChild className="bg-[#1A73E8] hover:bg-[#1557B0] text-white px-6 py-2">
-//               <a href={practiceUrl}>Start Practicing →</a>
-//             </Button>
-//           </div>
-//         </div>
-
-//         {/* Topics Section */}
-//         <div className="mb-8">
-//           <h2 className="text-2xl font-semibold mb-4">Topics Covered</h2>
-//           <ul className="list-disc list-inside space-y-1">
-//             {exam.topics?.map((topic, idx) => (
-//               <li key={idx}>
-//                 {topic.name} — {topic.weight}%
-//               </li>
-//             ))}
-//           </ul>
-//         </div>
-
-//         {/* Practice Tests Section */}
-//         <div className="mb-8">
-//           <h2 className="text-2xl font-semibold mb-4">Practice Tests</h2>
-//           <div className="grid md:grid-cols-2 gap-4">
-//             {exam.practiceTestsList?.map((test) => (
-//               <div key={test.id} className="p-4 border rounded shadow-sm">
-//                 <h3 className="font-medium">{test.name}</h3>
-//                 <p className="text-sm text-muted-foreground">
-//                   {test.questions} Questions — {test.difficulty}
-//                 </p>
-//                 <div className="mt-2">
-//                   <Progress value={test.progress} />
-//                 </div>
-//                 <Button asChild className="mt-2 w-full bg-primary hover:bg-primary/90">
-//                   <Link href={`${practiceUrl}/${test.id}`}>Start Test</Link>
-//                 </Button>
-//               </div>
-//             ))}
-//           </div>
-//         </div>
-
-//         {/* FAQs Section */}
-//         <div className="mb-8">
-//           <h2 className="text-2xl font-semibold mb-4">FAQs</h2>
-//           <div className="space-y-2">
-//             {exam.faqs?.map((faq, idx) => (
-//               <div key={idx} className="border p-4 rounded">
-//                 <p className="font-medium">{faq.question}</p>
-//                 <p className="text-muted-foreground mt-1">{faq.answer}</p>
-//               </div>
-//             ))}
-//           </div>
-//         </div>
-//       </main>
-
-//       {/* Sticky Mobile CTA */}
-//       <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 md:hidden z-40 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]">
-//         <Button
-//           asChild
-//           className="w-full bg-[#1A73E8] hover:bg-[#1557B0] text-white shadow-[0_4px_14px_rgba(26,115,232,0.4)] h-12 text-base font-semibold"
-//         >
-//           <a href={practiceUrl}>Start Practicing →</a>
-//         </Button>
-//       </div>
-
-//       <Footer />
-//     </div>
-//   );
-// };
-
-// export default ExamDetails;
