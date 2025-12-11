@@ -167,7 +167,7 @@ const ExamDetailsContent = () => {
   );
 };
 
-export default ExamDetails;
+
 
 
 const ExamDetails = () => {
