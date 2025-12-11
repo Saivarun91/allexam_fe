@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect ,Suspense} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Flag, Clock, X, Menu, CheckCircle2 } from "lucide-react";
@@ -20,7 +20,7 @@ import {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
-export default function TestPlayer() {
+function TestPlayerContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const provider = searchParams.get("provider");
@@ -450,3 +450,19 @@ export default function TestPlayer() {
   );
 }
 
+export default function TestPlayer() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-white flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1A73E8] mx-auto mb-4"></div>
+            <p className="text-[#0C1A35]/70">Loading test...</p>
+          </div>
+        </div>
+      }
+    >
+      <TestPlayerContent />
+    </Suspense>
+  );
+}
