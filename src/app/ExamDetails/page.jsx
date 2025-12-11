@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/router";
+import { useRouter ,useSearchParams} from "next/navigation";
 import Link from "next/link";
 import { Star, Clock, Users, TrendingUp, CheckCircle2, BookOpen, Target, Award } from "lucide-react";
 import Header from "@/components/layout/Header";
@@ -98,7 +98,9 @@ const examData = {
 
 const ExamDetails = () => {
   const router = useRouter();
-  const { provider, examCode } = router.query;
+  const searchparams = useSearchParams();
+  const provider = searchparams.get('provider');
+  const examCode = searchparams.get('examCode');
 
   if (!provider || !examCode) return null;
 
