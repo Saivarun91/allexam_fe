@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import ReviewsJsonLd from "@/components/ReviewsJsonLd";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -84,6 +85,19 @@ export default function ExamDetailPage() {
         const data = await res.json();
         setExam(data);
         setLoading(false);
+
+        // Set canonical URL
+        if (typeof window !== "undefined") {
+          const currentPath = window.location.pathname;
+          const canonicalUrl = `https://allexamquestions.com${currentPath}`;
+          let canonicalLink = document.querySelector('link[rel="canonical"]');
+          if (!canonicalLink) {
+            canonicalLink = document.createElement("link");
+            canonicalLink.setAttribute("rel", "canonical");
+            document.head.appendChild(canonicalLink);
+          }
+          canonicalLink.setAttribute("href", canonicalUrl);
+        }
       } catch (err) {
         console.error("Error fetching exam:", err);
         setError(true);
@@ -218,6 +232,9 @@ export default function ExamDetailPage() {
             </div>
           </div>
         </div>
+        {examData.testimonials && examData.testimonials.length > 0 && (
+          <ReviewsJsonLd testimonials={examData.testimonials} itemName={examData.title} />
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
@@ -515,7 +532,7 @@ export default function ExamDetailPage() {
             </Button>
             <Button
               onClick={() => {
-                router.push(`/auth?tab=login&redirect=${encodeURIComponent(pendingTestUrl || `/exams/${provider}/${examCode}/practice`)}`);
+                router.push(`/auth/login?redirect=${encodeURIComponent(pendingTestUrl || `/exams/${provider}/${examCode}/practice`)}`);
               }}
               className="flex-1 bg-[#1A73E8] hover:bg-[#1557B0] text-white"
             >

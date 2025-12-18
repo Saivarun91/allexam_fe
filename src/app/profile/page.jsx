@@ -147,7 +147,7 @@ export default function ProfilePage() {
           }
           
           alert("Profile updated successfully!");
-          router.push("/Dashboard");
+          router.push("/dashboard");
         }
       } else {
         const errorData = await res.json().catch(() => ({}));
@@ -328,7 +328,7 @@ export default function ProfilePage() {
               </Button>
               <Button
                 variant="outline"
-                onClick={() => router.push("/Dashboard")}
+                onClick={() => router.push("/dashboard")}
               >
                 Cancel
               </Button>

@@ -9,11 +9,25 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8
 
 const Testimonials = () => {
   const [testimonials, setTestimonials] = useState([]);
+  const [sectionSettings, setSectionSettings] = useState({
+    heading: "Success Stories From Real Learners",
+    subtitle: "Real experiences from professionals who passed using AllExamQuestions",
+  });
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const carouselRef = useRef(null);
 
   useEffect(() => {
+    // Fetch section settings
+    fetch(`${API_BASE_URL}/api/home/testimonials-section/`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.data) {
+          setSectionSettings(data.data);
+        }
+      })
+      .catch((err) => console.error("Error fetching section settings:", err));
+    
     fetch(`${API_BASE_URL}/api/home/testimonials/`)
       .then((res) => res.json())
       .then((data) => {
@@ -75,11 +89,13 @@ const Testimonials = () => {
       <div className="container mx-auto px-4">
         <div className="text-center mb-8 md:mb-12">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 md:mb-4 text-white px-2">
-            Success Stories From Real Learners
+            {sectionSettings.heading || "Success Stories From Real Learners"}
           </h2>
-          <p className="text-sm sm:text-base md:text-lg text-white/80 max-w-3xl mx-auto px-2">
-            Real experiences from professionals who passed using AllExamQuestions
-          </p>
+          {sectionSettings.subtitle && (
+            <p className="text-sm sm:text-base md:text-lg text-white/80 max-w-3xl mx-auto px-2">
+              {sectionSettings.subtitle}
+            </p>
+          )}
         </div>
 
         {/* Carousel Container */}

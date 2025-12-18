@@ -20,7 +20,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Edit, Trash2, Eye, Clock } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, Clock, Award, ArrowRight, Settings } from "lucide-react";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 
@@ -44,9 +45,63 @@ export default function RecentlyUpdatedAdmin() {
     order: 0,
   });
   
+  const [sectionSettings, setSectionSettings] = useState({
+    heading: "Recently Updated Exams",
+    subtitle: "Stay current with the latest exam updates",
+  });
+  
   useEffect(() => {
     fetchExams();
+    fetchSectionSettings();
   }, []);
+  
+  const fetchSectionSettings = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/home/admin/recently-updated-section/`, {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        }
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.data) {
+          setSectionSettings(data.data);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching section settings:", error);
+    }
+  };
+  
+  const handleSectionSettingsUpdate = async () => {
+    setLoading(true);
+    setMessage("");
+    
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/home/admin/recently-updated-section/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        },
+        body: JSON.stringify(sectionSettings),
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        setMessage("✅ Section settings updated successfully!");
+        setTimeout(() => setMessage(""), 3000);
+      } else {
+        setMessage("❌ Error: " + (data.error || "Failed to save"));
+      }
+    } catch (err) {
+      setMessage("❌ Error: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
   
   const fetchExams = async () => {
     try {
@@ -363,6 +418,46 @@ export default function RecentlyUpdatedAdmin() {
           {message}
         </motion.div>
       )}
+
+      {/* Section Settings */}
+      <Card className="mb-6">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Settings className="w-5 h-5 text-[#1A73E8]" />
+              <CardTitle>Section Settings</CardTitle>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <Label>Section Heading</Label>
+              <Input
+                value={sectionSettings.heading}
+                onChange={(e) => setSectionSettings({...sectionSettings, heading: e.target.value})}
+                placeholder="Recently Updated Exams"
+              />
+            </div>
+            <div>
+              <Label>Section Subtitle</Label>
+              <Input
+                value={sectionSettings.subtitle}
+                onChange={(e) => setSectionSettings({...sectionSettings, subtitle: e.target.value})}
+                placeholder="Stay current with the latest exam updates"
+              />
+            </div>
+          </div>
+          
+          <Button 
+            onClick={handleSectionSettingsUpdate} 
+            disabled={loading}
+            className="bg-[#1A73E8] hover:bg-[#1557B0]"
+          >
+            {loading ? "Saving..." : "Save Section Settings"}
+          </Button>
+        </CardContent>
+      </Card>
       
       {/* Exams Table */}
       <Card className="border-[#D3E3FF]">
@@ -400,13 +495,18 @@ export default function RecentlyUpdatedAdmin() {
                 ) : (
                   exams.map((exam) => (
                     <TableRow key={exam.id}>
-                      <TableCell className="text-center font-mono text-sm">{exam.order}</TableCell>
-                      <TableCell className="font-medium">{exam.name}</TableCell>
-                      <TableCell>{exam.provider}</TableCell>
-                      <TableCell><Badge variant="outline">{exam.code}</Badge></TableCell>
-                      <TableCell className="text-sm text-[#10B981]">{exam.updated}</TableCell>
+                      <TableCell className="text-center font-mono text-sm">{exam.order ?? 0}</TableCell>
+                      <TableCell className="font-medium">{exam.name || exam.title || "N/A"}</TableCell>
+                      <TableCell>{exam.provider || "N/A"}</TableCell>
+                      <TableCell><Badge variant="outline">{exam.code || "N/A"}</Badge></TableCell>
+                      <TableCell className="text-sm text-[#10B981]">
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {exam.updated || "N/A"}
+                        </div>
+                      </TableCell>
                       <TableCell className="text-center text-sm">
-                        {exam.practice_exams} / {exam.questions}
+                        {exam.practice_exams || 0} / {exam.questions || 0}
                       </TableCell>
                       <TableCell>
                         <Badge variant={exam.is_active ? "default" : "secondary"} className="bg-[#10B981]">
@@ -438,6 +538,79 @@ export default function RecentlyUpdatedAdmin() {
                 )}
               </TableBody>
             </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Preview Section */}
+      <Card className="border-[#D3E3FF] mt-6">
+        <CardHeader className="bg-gradient-to-r from-purple-500/5 to-purple-500/10">
+          <CardTitle className="text-xl">Homepage Preview</CardTitle>
+          <p className="text-sm text-gray-600 mt-1">How this section appears on the homepage</p>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <div className="bg-gradient-to-b from-[#0C1A35]/2 to-white py-8 rounded-lg">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-3 md:mb-4 text-[#0C1A35] px-2">
+              {sectionSettings.heading || "Recently Updated Exams"}
+            </h2>
+            <p className="text-center text-[#0C1A35]/70 text-sm sm:text-base md:text-lg mb-8 md:mb-12 max-w-2xl mx-auto px-2">
+              {sectionSettings.subtitle || "Stay current with the latest exam updates"}
+            </p>
+            <div className="max-w-5xl mx-auto">
+              <div className="max-h-[400px] overflow-y-auto space-y-4 pr-2">
+                {exams.filter(exam => exam.is_active).slice(0, 3).map((exam, index) => (
+                  <div
+                    key={exam.id || index}
+                    className="bg-white border border-[#DDE7FF] rounded-lg p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:shadow-[0_6px_20px_rgba(26,115,232,0.15)] hover:-translate-y-1 transition-all shadow-[0_2px_8px_rgba(26,115,232,0.08)]"
+                  >
+                    <div className="flex items-start gap-4 flex-1">
+                      <div className="w-12 h-12 rounded-lg bg-[#1A73E8]/10 flex items-center justify-center flex-shrink-0">
+                        <Award className="w-6 h-6 text-[#1A73E8]" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <h3 className="font-bold text-[#0C1A35] text-lg">{exam.title || exam.name}</h3>
+                          <Badge
+                            variant="outline"
+                            className="text-xs border-[#D3E3FF] text-[#0C1A35] font-medium"
+                          >
+                            {exam.code}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-[#0C1A35]/60 mb-2">{exam.provider}</p>
+                        <div className="flex items-center gap-4 flex-wrap">
+                          {exam.badge && (
+                            <Badge className="bg-[#1A73E8]/10 text-[#1A73E8] text-xs">
+                              {exam.badge}
+                            </Badge>
+                          )}
+                          <p className="text-sm text-[#0C1A35]/60">
+                            {exam.practice_exams || 0} Practice Exams · {exam.questions || 0} Questions
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    {exam.slug && (
+                      <Button
+                        size="default"
+                        className="bg-[#1A73E8] text-white hover:bg-[#1557B0] whitespace-nowrap"
+                        asChild
+                      >
+                        <Link href={`/exam-details/${exam.slug}`}>
+                          Practice Now
+                          <ArrowRight className="ml-2 w-4 h-4" />
+                        </Link>
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                {exams.filter(exam => exam.is_active).length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>No active exams to preview</p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>

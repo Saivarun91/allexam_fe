@@ -70,6 +70,7 @@
 import { useEffect, useState } from "react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import FAQJsonLd from "@/components/FAQJsonLd";
 import {
   Accordion,
   AccordionContent,
@@ -123,6 +124,20 @@ export default function FAQ() {
     fetchFAQs();
   }, []);
 
+  // Set canonical URL for FAQ page
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const canonicalUrl = "https://allexamquestions.com/FAQ";
+      let canonicalLink = document.querySelector('link[rel="canonical"]');
+      if (!canonicalLink) {
+        canonicalLink = document.createElement("link");
+        canonicalLink.setAttribute("rel", "canonical");
+        document.head.appendChild(canonicalLink);
+      }
+      canonicalLink.setAttribute("href", canonicalUrl);
+    }
+  }, []);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-500">
@@ -139,8 +154,12 @@ export default function FAQ() {
     );
   }
 
+  // Flatten all FAQs from all sections for JSON-LD
+  const allFAQs = faqSections.flatMap((section) => section.faqs || []);
+
   return (
     <div className="min-h-screen">
+      {allFAQs.length > 0 && <FAQJsonLd faqs={allFAQs} />}
       <Header />
       <main className="py-16 bg-background">
         <div className="container mx-auto px-4 max-w-5xl">

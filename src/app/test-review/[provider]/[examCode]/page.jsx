@@ -474,7 +474,7 @@ export default function TestReview() {
             
             <Button
               size="lg"
-              onClick={() => router.push('/Dashboard')}
+              onClick={() => router.push('/dashboard')}
               className="bg-green-600 text-white hover:bg-green-700"
             >
               Go to Dashboard →

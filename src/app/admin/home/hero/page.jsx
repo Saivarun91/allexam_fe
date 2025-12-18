@@ -19,10 +19,7 @@ export default function HeroSectionAdmin() {
     title: "",
     subtitle: "",
     background_image_url: "",
-    stats: [],
-    meta_title: "",
-    meta_keywords: "",
-    meta_description: ""
+    stats: []
   });
   
   useEffect(() => {
@@ -250,48 +247,6 @@ export default function HeroSectionAdmin() {
                 <p className="text-sm text-gray-500 mt-1">Click "Add Stat" to add success metrics</p>
               </div>
             )}
-          </CardContent>
-        </Card>
-        
-        {/* SEO Fields */}
-        <Card className="border-[#D3E3FF]">
-          <CardHeader className="bg-gradient-to-r from-purple-500/5 to-purple-500/10">
-            <CardTitle className="text-xl text-[#0C1A35]">SEO Meta Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 pt-6">
-            <div>
-              <Label htmlFor="meta_title" className="text-[#0C1A35] font-semibold">Meta Title</Label>
-              <Input
-                id="meta_title"
-                value={formData.meta_title || ""}
-                onChange={(e) => setFormData({...formData, meta_title: e.target.value})}
-                placeholder="AllExamQuestions - Best Certification Exam Practice"
-                className="mt-2 border-[#D3E3FF] focus:border-[#1A73E8]"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="meta_keywords" className="text-[#0C1A35] font-semibold">Meta Keywords</Label>
-              <Input
-                id="meta_keywords"
-                value={formData.meta_keywords || ""}
-                onChange={(e) => setFormData({...formData, meta_keywords: e.target.value})}
-                placeholder="certification exams, practice questions, AWS, Azure, Cisco"
-                className="mt-2 border-[#D3E3FF] focus:border-[#1A73E8]"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="meta_description" className="text-[#0C1A35] font-semibold">Meta Description</Label>
-              <Textarea
-                id="meta_description"
-                value={formData.meta_description || ""}
-                onChange={(e) => setFormData({...formData, meta_description: e.target.value})}
-                placeholder="Ace your certification exams with accurate practice questions..."
-                rows={3}
-                className="mt-2 border-[#D3E3FF] focus:border-[#1A73E8]"
-              />
-            </div>
           </CardContent>
         </Card>
         

@@ -508,6 +508,58 @@ export default function ValuePropositionsAdmin() {
           )}
         </CardContent>
       </Card>
+
+      {/* Preview Section */}
+      <Card className="border-[#D3E3FF] mt-6">
+        <CardHeader className="bg-gradient-to-r from-purple-500/5 to-purple-500/10">
+          <CardTitle className="text-xl">Homepage Preview</CardTitle>
+          <p className="text-sm text-gray-600 mt-1">How this section appears on the homepage</p>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <div className="bg-[#0F1F3C]/10 py-12 md:py-20 rounded-lg">
+            <div className="container mx-auto px-4">
+              <h2 className={`text-2xl sm:text-3xl md:${sectionSettings.heading_font_size || 'text-4xl'} ${sectionSettings.heading_font_family || 'font-bold'} ${sectionSettings.heading_color || 'text-[#0C1A35]'} text-center mb-3 md:mb-4 px-2`}>
+                {sectionSettings.heading || "Why Choose AllExamQuestions?"}
+              </h2>
+
+              <p className={`text-center ${sectionSettings.subtitle_color || 'text-[#0C1A35]/70'} text-sm sm:text-base md:${sectionSettings.subtitle_font_size || 'text-lg'} mb-8 md:mb-12 max-w-2xl mx-auto px-2`}>
+                {sectionSettings.subtitle || "Everything you need to ace your certification exam in one place"}
+              </p>
+
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {propositions.filter(prop => prop.is_active).map((feature, index) => {
+                  const Icon = ICON_MAP[feature.icon] || Gift;
+                  return (
+                    <Card
+                      key={feature.id || index}
+                      className="border-[#D3E3FF] bg-white hover:shadow-[0_8px_24px_rgba(26,115,232,0.15)] transition-shadow"
+                    >
+                      <CardContent className="p-6 text-center space-y-4">
+                        <div className="w-16 h-16 rounded-full bg-[#1A73E8]/10 flex items-center justify-center mx-auto">
+                          <Icon className="w-8 h-8 text-[#1A73E8]" />
+                        </div>
+
+                        <h3 className="text-xl font-bold text-[#0C1A35]">
+                          {feature.title}
+                        </h3>
+
+                        <p className="text-[#0C1A35]/70">
+                          {feature.description}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+              {propositions.filter(prop => prop.is_active).length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <p>No active value propositions to preview</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

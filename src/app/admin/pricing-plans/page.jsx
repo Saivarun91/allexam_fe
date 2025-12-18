@@ -70,6 +70,15 @@ export default function PricingPlansAdmin() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [activeTab, setActiveTab] = useState("hero");
+  
+  // SEO states
+  const [seoLoading, setSeoLoading] = useState(false);
+  const [seoMessage, setSeoMessage] = useState("");
+  const [seoData, setSeoData] = useState({
+    meta_title: "",
+    meta_keywords: "",
+    meta_description: "",
+  });
 
   // Hero Section
   const [heroData, setHeroData] = useState({
@@ -140,7 +149,73 @@ export default function PricingPlansAdmin() {
       return;
     }
     fetchCourses();
+    fetchSeoData();
   }, []);
+
+  // Fetch SEO Data
+  const fetchSeoData = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/home/admin/pricing-plans-seo/`, {
+        headers: getAuthHeaders(),
+      });
+      if (res.status === 401 || res.status === 404 || !res.ok) {
+        return;
+      }
+      const data = await res.json();
+      if (data.success && data.data) {
+        setSeoData({
+          meta_title: data.data.meta_title || "",
+          meta_keywords: data.data.meta_keywords || "",
+          meta_description: data.data.meta_description || "",
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching SEO data:", error);
+    }
+  };
+
+  // Save SEO Data
+  const handleSaveSeo = async () => {
+    setSeoLoading(true);
+    setSeoMessage("");
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/home/admin/pricing-plans-seo/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify(seoData),
+      });
+      if (res.status === 401) {
+        setSeoMessage("❌ Authentication failed. Please log in again.");
+        setTimeout(() => router.push("/admin/auth"), 2000);
+        setSeoLoading(false);
+        return;
+      }
+      if (res.status === 404) {
+        setSeoMessage("❌ API endpoint not found.");
+        setSeoLoading(false);
+        return;
+      }
+      if (!res.ok) {
+        setSeoMessage("❌ Error: " + res.statusText);
+        setSeoLoading(false);
+        return;
+      }
+      const data = await res.json();
+      if (data.success) {
+        setSeoMessage("✅ SEO meta information saved successfully!");
+        setTimeout(() => setSeoMessage(""), 3000);
+      } else {
+        setSeoMessage("❌ Error: " + (data.error || "Failed to save"));
+      }
+    } catch (error) {
+      setSeoMessage("❌ Error: " + error.message);
+    } finally {
+      setSeoLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (selectedCourse) {
@@ -149,35 +224,78 @@ export default function PricingPlansAdmin() {
   }, [selectedCourse]);
 
   const fetchCourses = async () => {
+    setLoading(true);
     try {
+      // Try admin endpoint first
       const res = await fetch(`${API_BASE_URL}/api/courses/admin/list/`, {
         headers: getAuthHeaders()
       });
+      
+      if (res.status === 401) {
+        setMessage("❌ Authentication failed. Please log in again.");
+        setTimeout(() => router.push("/admin/auth"), 2000);
+        setLoading(false);
+        return;
+      }
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      
       const data = await res.json();
-      if (data.success) {
-        setCourses(data.data || []);
+      
+      if (data.success && data.data) {
+        setCourses(Array.isArray(data.data) ? data.data : []);
+      } else if (data.success && data.courses) {
+        setCourses(Array.isArray(data.courses) ? data.courses : []);
       } else if (Array.isArray(data)) {
         setCourses(data);
-      } else if (data.courses) {
+      } else if (data.courses && Array.isArray(data.courses)) {
         setCourses(data.courses);
+      } else {
+        // Fallback to public endpoint
+        const publicRes = await fetch(`${API_BASE_URL}/api/courses/`);
+        if (publicRes.ok) {
+          const publicData = await publicRes.json();
+          if (publicData.success && publicData.courses) {
+            setCourses(Array.isArray(publicData.courses) ? publicData.courses : []);
+          } else if (publicData.success && publicData.data) {
+            setCourses(Array.isArray(publicData.data) ? publicData.data : []);
+          } else if (Array.isArray(publicData)) {
+            setCourses(publicData);
+          } else {
+            setCourses([]);
+          }
+        } else {
+          setCourses([]);
+        }
       }
     } catch (error) {
       console.error("Error fetching courses:", error);
       // Fallback to public endpoint
       try {
         const res = await fetch(`${API_BASE_URL}/api/courses/`);
-        const data = await res.json();
-        if (data.success) {
-          setCourses(data.courses || data.data || []);
-        } else if (Array.isArray(data)) {
-          setCourses(data);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.courses) {
+            setCourses(Array.isArray(data.courses) ? data.courses : []);
+          } else if (data.success && data.data) {
+            setCourses(Array.isArray(data.data) ? data.data : []);
+          } else if (Array.isArray(data)) {
+            setCourses(data);
+          } else {
+            setCourses([]);
+          }
         } else {
           setCourses([]);
         }
       } catch (err) {
         console.error("Error fetching courses from public endpoint:", err);
         setCourses([]);
+        setMessage("❌ Error loading courses. Please try again.");
       }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -555,6 +673,64 @@ export default function PricingPlansAdmin() {
           <h1 className="text-3xl font-bold text-[#0C1A35]">Pricing Plans Management</h1>
           <p className="text-[#0C1A35]/70 mt-1">Manage all pricing page sections for courses</p>
         </div>
+      </div>
+
+      {/* SEO Meta Information Card */}
+      <Card className="mb-6 border border-blue-200">
+        <CardHeader>
+          <CardTitle className="text-xl text-[#0C1A35]">SEO Meta Information</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="seo_meta_title">Meta Title</Label>
+            <Input
+              id="seo_meta_title"
+              value={seoData.meta_title}
+              onChange={(e) => setSeoData({ ...seoData, meta_title: e.target.value })}
+              placeholder="Enter meta title (50-60 characters recommended)"
+              className="mt-1"
+            />
+            <p className="text-xs text-gray-500 mt-1">Appears in search engine results</p>
+          </div>
+          <div>
+            <Label htmlFor="seo_meta_keywords">Meta Keywords</Label>
+            <Input
+              id="seo_meta_keywords"
+              value={seoData.meta_keywords}
+              onChange={(e) => setSeoData({ ...seoData, meta_keywords: e.target.value })}
+              placeholder="Enter meta keywords (comma-separated)"
+              className="mt-1"
+            />
+            <p className="text-xs text-gray-500 mt-1">Separate keywords with commas</p>
+          </div>
+          <div>
+            <Label htmlFor="seo_meta_description">Meta Description</Label>
+            <Textarea
+              id="seo_meta_description"
+              value={seoData.meta_description}
+              onChange={(e) => setSeoData({ ...seoData, meta_description: e.target.value })}
+              placeholder="Enter meta description (150-160 characters recommended)"
+              className="mt-1"
+              rows={3}
+            />
+            <p className="text-xs text-gray-500 mt-1">Brief description for search engines</p>
+          </div>
+          {seoMessage && (
+            <div className={`p-3 rounded-lg ${seoMessage.includes("✅") ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+              {seoMessage}
+            </div>
+          )}
+          <Button
+            onClick={handleSaveSeo}
+            disabled={seoLoading}
+            className="w-fit"
+          >
+            {seoLoading ? "Saving..." : "Save SEO Meta Information"}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <div className="flex items-center justify-between mb-6">
         <div className="flex gap-3 items-center">
           <Select 
             value={selectedCourse ? (selectedCourse.id || selectedCourse._id || String(selectedCourse.id) || String(selectedCourse._id)) : ""} 

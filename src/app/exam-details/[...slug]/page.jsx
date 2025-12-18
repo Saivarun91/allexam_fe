@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import FAQJsonLd from "@/components/FAQJsonLd";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -97,6 +98,21 @@ export default function ExamDetailsPage() {
         }
         const data = await res.json();
         setExam(data);
+        
+        // Redirect to new URL format: /exams/[provider]/[examCode]
+        if (data && data.provider && data.code) {
+          const providerSlug = data.provider.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+          const codeSlug = data.code.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+          if (providerSlug && codeSlug) {
+            const newUrl = `/exams/${providerSlug}/${codeSlug}`;
+            // Only redirect if we're not already on the new URL format
+            if (typeof window !== 'undefined' && window.location.pathname.startsWith('/exam-details/')) {
+              router.replace(newUrl);
+              return;
+            }
+          }
+        }
+        
         setLoading(false);
 
         // Set SEO meta tags dynamically
@@ -120,6 +136,17 @@ export default function ExamDetailsPage() {
           document.head.appendChild(metaKeys);
         }
         metaKeys.setAttribute("content", metaKeywords);
+
+        // Set canonical URL
+        const currentPath = window.location.pathname;
+        const canonicalUrl = `https://allexamquestions.com${currentPath}`;
+        let canonicalLink = document.querySelector('link[rel="canonical"]');
+        if (!canonicalLink) {
+          canonicalLink = document.createElement("link");
+          canonicalLink.setAttribute("rel", "canonical");
+          document.head.appendChild(canonicalLink);
+        }
+        canonicalLink.setAttribute("href", canonicalUrl);
       } catch (err) {
         console.error("Error fetching exam:", err);
         setError(true);
@@ -516,6 +543,7 @@ export default function ExamDetailsPage() {
         {/* FAQs Section */}
         {exam.faqs && exam.faqs.length > 0 && (
           <section className="mb-12">
+            <FAQJsonLd faqs={exam.faqs} />
             <h2 className="text-2xl font-bold text-[#0C1A35] mb-4">Frequently Asked Questions</h2>
             <p className="text-[#0C1A35]/60 mb-6">Everything you need to know about this exam preparation pack</p>
             <Accordion type="single" collapsible className="w-full space-y-4">
@@ -574,7 +602,7 @@ export default function ExamDetailsPage() {
               onClick={() => {
                 const { provider, examCode } = getProviderAndCode();
                 const redirectUrl = pendingTestUrl || (provider && examCode ? `/exams/${provider}/${examCode}/practice` : '/');
-                router.push(`/auth?tab=login&redirect=${encodeURIComponent(redirectUrl)}`);
+                router.push(`/auth/login?redirect=${encodeURIComponent(redirectUrl)}`);
               }}
               className="flex-1 bg-[#1A73E8] hover:bg-[#1557B0] text-white"
             >

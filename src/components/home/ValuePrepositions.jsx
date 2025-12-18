@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Gift, Clock, Brain, CheckCircle, Users, FileText } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Gift, Clock, Brain, CheckCircle, Users, FileText, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
@@ -28,31 +29,82 @@ export default function ValuePropositions() {
     subtitle_color: "text-[#0C1A35]/70"
   });
   const [loading, setLoading] = useState(true);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const carouselRef = useRef(null);
+  const isMounted = useRef(true);
 
-  useEffect(() => {
-    // Fetch section settings
-    fetch(`${API_BASE_URL}/api/home/value-propositions-section/`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.data) {
-          setSection(data.data);
+  const fetchData = useCallback(async () => {
+    try {
+      // Fetch section settings and value propositions in parallel
+      const [sectionRes, propositionsRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/api/home/value-propositions-section/`),
+        fetch(`${API_BASE_URL}/api/home/value-propositions/`)
+      ]);
+
+      const [sectionData, propositionsData] = await Promise.all([
+        sectionRes.json(),
+        propositionsRes.json()
+      ]);
+
+      if (!isMounted.current) return;
+
+      // Update section settings
+      if (sectionData.success && sectionData.data) {
+        setSection(sectionData.data);
         }
-      })
-      .catch((err) => console.error("Error fetching section settings:", err));
     
-    // Fetch value propositions
-    fetch(`${API_BASE_URL}/api/home/value-propositions/`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.data) {
-          // Only show active value propositions
-          const activeFeatures = data.data.filter(f => f.is_active);
+      // Update value propositions
+      if (propositionsData.success && propositionsData.data) {
+        // Backend already filters by is_active=True, but add extra safety check
+        const activeFeatures = propositionsData.data.filter(f => f.is_active !== false);
           setFeatures(activeFeatures);
         }
-      })
-      .catch((err) => console.error("Error fetching value propositions:", err))
-      .finally(() => setLoading(false));
+    } catch (err) {
+      console.error("Error fetching value propositions data:", err);
+    } finally {
+      if (isMounted.current) {
+        setLoading(false);
+      }
+    }
   }, []);
+
+  useEffect(() => {
+    isMounted.current = true;
+    fetchData();
+
+    return () => {
+      isMounted.current = false;
+    };
+  }, [fetchData]);
+
+  // Items to show at once (responsive)
+  const [itemsPerView, setItemsPerView] = useState(3);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setItemsPerView(1);
+      } else if (window.innerWidth < 1024) {
+        setItemsPerView(2);
+      } else {
+        setItemsPerView(3);
+      }
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const maxIndex = Math.max(0, features.length - itemsPerView);
+
+  const handlePrev = () => {
+    setCurrentIndex((prev) => Math.max(0, prev - 1));
+  };
+
+  const handleNext = () => {
+    setCurrentIndex((prev) => Math.min(maxIndex, prev + 1));
+  };
 
   if (loading) {
     return (
@@ -79,14 +131,47 @@ export default function ValuePropositions() {
           {section.subtitle}
         </p>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Carousel Container */}
+        <div className="relative">
+          {/* Navigation Buttons */}
+          {features.length > itemsPerView && (
+            <>
+              <Button
+                onClick={handlePrev}
+                disabled={currentIndex === 0}
+                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 rounded-full w-12 h-12 bg-white hover:bg-gray-100 text-[#1A73E8] shadow-lg disabled:opacity-30 disabled:cursor-not-allowed border border-gray-200"
+                size="icon"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </Button>
+              <Button
+                onClick={handleNext}
+                disabled={currentIndex >= maxIndex}
+                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 rounded-full w-12 h-12 bg-white hover:bg-gray-100 text-[#1A73E8] shadow-lg disabled:opacity-30 disabled:cursor-not-allowed border border-gray-200"
+                size="icon"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </Button>
+            </>
+          )}
+
+          {/* Carousel Track */}
+          <div className="overflow-hidden" ref={carouselRef}>
+            <div
+              className="flex transition-transform duration-500 ease-in-out gap-6"
+              style={{
+                transform: `translateX(-${currentIndex * (100 / itemsPerView)}%)`,
+              }}
+            >
           {features.map((feature, index) => {
             const Icon = iconMap[feature.icon] || Gift;
             return (
-              <Card
+                  <div
                 key={feature.id || index}
-                className="border-[#D3E3FF] bg-white hover:shadow-[0_8px_24px_rgba(26,115,232,0.15)] transition-shadow"
+                    className="flex-shrink-0"
+                    style={{ width: `calc(${100 / itemsPerView}% - ${(itemsPerView - 1) * 24 / itemsPerView}px)` }}
               >
+                    <Card className="border-[#D3E3FF] bg-white hover:shadow-[0_8px_24px_rgba(26,115,232,0.15)] transition-shadow h-full">
                 <CardContent className="p-6 text-center space-y-4">
                   <div className="w-16 h-16 rounded-full bg-[#1A73E8]/10 flex items-center justify-center mx-auto">
                     <Icon className="w-8 h-8 text-[#1A73E8]" />
@@ -101,8 +186,29 @@ export default function ValuePropositions() {
                   </p>
                 </CardContent>
               </Card>
+                  </div>
             );
           })}
+            </div>
+          </div>
+
+          {/* Dots Indicator */}
+          {features.length > itemsPerView && (
+            <div className="flex justify-center gap-2 mt-8">
+              {Array.from({ length: maxIndex + 1 }).map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentIndex(idx)}
+                  className={`w-2 h-2 rounded-full transition-all ${
+                    idx === currentIndex
+                      ? "bg-[#1A73E8] w-8"
+                      : "bg-gray-300 hover:bg-gray-400"
+                  }`}
+                  aria-label={`Go to slide ${idx + 1}`}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </section>

@@ -34,6 +34,15 @@ export default function ExamsPageManager() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  
+  // SEO states
+  const [seoLoading, setSeoLoading] = useState(false);
+  const [seoMessage, setSeoMessage] = useState("");
+  const [seoData, setSeoData] = useState({
+    meta_title: "",
+    meta_keywords: "",
+    meta_description: "",
+  });
 
   // Trust Bar State
   const [trustBarItems, setTrustBarItems] = useState([
@@ -58,7 +67,73 @@ export default function ExamsPageManager() {
     }
 
     fetchData();
+    fetchSeoData();
   }, []);
+
+  // Fetch SEO Data
+  const fetchSeoData = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/home/admin/exams-page-seo/`, {
+        headers: getAuthHeaders(),
+      });
+      if (res.status === 401 || res.status === 404 || !res.ok) {
+        return;
+      }
+      const data = await res.json();
+      if (data.success && data.data) {
+        setSeoData({
+          meta_title: data.data.meta_title || "",
+          meta_keywords: data.data.meta_keywords || "",
+          meta_description: data.data.meta_description || "",
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching SEO data:", error);
+    }
+  };
+
+  // Save SEO Data
+  const handleSaveSeo = async () => {
+    setSeoLoading(true);
+    setSeoMessage("");
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/home/admin/exams-page-seo/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify(seoData),
+      });
+      if (res.status === 401) {
+        setSeoMessage("❌ Authentication failed. Please log in again.");
+        setTimeout(() => router.push("/admin/auth"), 2000);
+        setSeoLoading(false);
+        return;
+      }
+      if (res.status === 404) {
+        setSeoMessage("❌ API endpoint not found.");
+        setSeoLoading(false);
+        return;
+      }
+      if (!res.ok) {
+        setSeoMessage("❌ Error: " + res.statusText);
+        setSeoLoading(false);
+        return;
+      }
+      const data = await res.json();
+      if (data.success) {
+        setSeoMessage("✅ SEO meta information saved successfully!");
+        setTimeout(() => setSeoMessage(""), 3000);
+      } else {
+        setSeoMessage("❌ Error: " + (data.error || "Failed to save"));
+      }
+    } catch (error) {
+      setSeoMessage("❌ Error: " + error.message);
+    } finally {
+      setSeoLoading(false);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -192,6 +267,61 @@ export default function ExamsPageManager() {
         <h1 className="text-3xl font-bold text-[#0C1A35] mb-2">Exams Page Manager</h1>
         <p className="text-[#0C1A35]/60">Manage content displayed on the /exams page</p>
       </div>
+
+      {/* SEO Meta Information Card */}
+      <Card className="mb-6 border border-blue-200">
+        <CardHeader>
+          <CardTitle className="text-xl text-[#0C1A35]">SEO Meta Information</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="seo_meta_title">Meta Title</Label>
+            <Input
+              id="seo_meta_title"
+              value={seoData.meta_title}
+              onChange={(e) => setSeoData({ ...seoData, meta_title: e.target.value })}
+              placeholder="Enter meta title (50-60 characters recommended)"
+              className="mt-1"
+            />
+            <p className="text-xs text-gray-500 mt-1">Appears in search engine results</p>
+          </div>
+          <div>
+            <Label htmlFor="seo_meta_keywords">Meta Keywords</Label>
+            <Input
+              id="seo_meta_keywords"
+              value={seoData.meta_keywords}
+              onChange={(e) => setSeoData({ ...seoData, meta_keywords: e.target.value })}
+              placeholder="Enter meta keywords (comma-separated)"
+              className="mt-1"
+            />
+            <p className="text-xs text-gray-500 mt-1">Separate keywords with commas</p>
+          </div>
+          <div>
+            <Label htmlFor="seo_meta_description">Meta Description</Label>
+            <Textarea
+              id="seo_meta_description"
+              value={seoData.meta_description}
+              onChange={(e) => setSeoData({ ...seoData, meta_description: e.target.value })}
+              placeholder="Enter meta description (150-160 characters recommended)"
+              className="mt-1"
+              rows={3}
+            />
+            <p className="text-xs text-gray-500 mt-1">Brief description for search engines</p>
+          </div>
+          {seoMessage && (
+            <div className={`p-3 rounded-lg ${seoMessage.includes("✅") ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+              {seoMessage}
+            </div>
+          )}
+          <Button
+            onClick={handleSaveSeo}
+            disabled={seoLoading}
+            className="w-fit"
+          >
+            {seoLoading ? "Saving..." : "Save SEO Meta Information"}
+          </Button>
+        </CardContent>
+      </Card>
 
       {message && (
         <div className={`mb-4 p-4 rounded-lg ${message.includes("❌") ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"}`}>

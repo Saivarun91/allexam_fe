@@ -10,6 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import PracticeTestJsonLd from "@/components/PracticeTestJsonLd";
+import ReviewsJsonLd from "@/components/ReviewsJsonLd";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -177,6 +179,8 @@ console.log("practice exams :",practiceTests)
 
   return (
     <div className="min-h-screen bg-white">
+      {exam && <PracticeTestJsonLd exam={exam} practiceTests={practiceTests} />}
+      {testimonials.length > 0 && <ReviewsJsonLd testimonials={testimonials} itemName={exam.title} />}
       <main className="container mx-auto px-4 py-8">
         {/* Breadcrumb */}
         <Breadcrumb className="mb-6">
@@ -473,7 +477,7 @@ console.log("practice exams :",practiceTests)
               </Button>
               <Button
                 onClick={() => {
-                  router.push(`/auth?tab=login&redirect=${encodeURIComponent(pendingTestUrl || `/exams/${provider}/${examCode}/practice`)}`);
+                  router.push(`/auth/login?redirect=${encodeURIComponent(pendingTestUrl || `/exams/${provider}/${examCode}/practice`)}`);
                 }}
                 className="flex-1 bg-[#1A73E8] hover:bg-[#1557B0] text-white"
               >

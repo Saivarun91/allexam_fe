@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Edit, Eye, Award, ArrowRight, Trash2, X } from "lucide-react";
+import { Plus, Edit, Eye, Award, ArrowRight, Trash2, X, Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { motion } from "framer-motion";
@@ -37,16 +37,67 @@ export default function FeaturedExamsAdmin() {
     provider: "",
     category: "",
     badge: "",
-    meta_title: "",
-    meta_keywords: "",
-    meta_description: "",
+  });
+  
+  const [sectionSettings, setSectionSettings] = useState({
+    heading: "Featured Certification Exams",
+    subtitle: "Explore our most popular certification exams",
   });
   
   useEffect(() => {
     fetchCourses();
     fetchProviders();
     fetchCategories();
+    fetchSectionSettings();
   }, []);
+  
+  const fetchSectionSettings = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/home/admin/featured-exams-section/`, {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        }
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.data) {
+          setSectionSettings(data.data);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching section settings:", error);
+    }
+  };
+  
+  const handleSectionSettingsUpdate = async () => {
+    setLoading(true);
+    setMessage("");
+    
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/home/admin/featured-exams-section/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        },
+        body: JSON.stringify(sectionSettings),
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        setMessage("✅ Section settings updated successfully!");
+        setTimeout(() => setMessage(""), 3000);
+      } else {
+        setMessage("❌ Error: " + (data.error || "Failed to save"));
+      }
+    } catch (err) {
+      setMessage("❌ Error: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchProviders = async () => {
     try {
@@ -160,9 +211,6 @@ export default function FeaturedExamsAdmin() {
           category: category,
           short_description: newCourse.description || "",
           badge: newCourse.badge || "",
-          meta_title: newCourse.meta_title || "",
-          meta_keywords: newCourse.meta_keywords || "",
-          meta_description: newCourse.meta_description || "",
           is_featured: true, // Automatically mark as featured
         }),
       });
@@ -179,9 +227,6 @@ export default function FeaturedExamsAdmin() {
         provider: "",
         category: "",
         badge: "",
-        meta_title: "",
-        meta_keywords: "",
-        meta_description: "",
       });
       fetchCourses();
       setTimeout(() => setMessage(""), 3000);
@@ -273,6 +318,46 @@ export default function FeaturedExamsAdmin() {
           {message}
         </motion.div>
       )}
+
+      {/* Section Settings */}
+      <Card className="mb-6">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Settings className="w-5 h-5 text-[#1A73E8]" />
+              <CardTitle>Section Settings</CardTitle>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <Label>Section Heading</Label>
+              <Input
+                value={sectionSettings.heading}
+                onChange={(e) => setSectionSettings({...sectionSettings, heading: e.target.value})}
+                placeholder="Featured Certification Exams"
+              />
+            </div>
+            <div>
+              <Label>Section Subtitle</Label>
+              <Input
+                value={sectionSettings.subtitle}
+                onChange={(e) => setSectionSettings({...sectionSettings, subtitle: e.target.value})}
+                placeholder="Explore our most popular certification exams"
+              />
+            </div>
+          </div>
+          
+          <Button 
+            onClick={handleSectionSettingsUpdate} 
+            disabled={loading}
+            className="bg-[#1A73E8] hover:bg-[#1557B0]"
+          >
+            {loading ? "Saving..." : "Save Section Settings"}
+          </Button>
+        </CardContent>
+      </Card>
       
       {/* Courses Table */}
       <Card>
@@ -406,9 +491,12 @@ export default function FeaturedExamsAdmin() {
           </CardHeader>
           <CardContent>
             <div className="bg-white p-8 rounded-lg">
-              <h2 className="text-3xl font-bold text-center mb-8 text-[#0C1A35]">
-                Featured Exams
+              <h2 className="text-3xl font-bold text-center mb-3 text-[#0C1A35]">
+                {sectionSettings.heading || "Featured Certification Exams"}
               </h2>
+              <p className="text-center text-[#0C1A35]/70 text-lg mb-8 max-w-2xl mx-auto">
+                {sectionSettings.subtitle || "Explore our most popular certification exams"}
+              </p>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {courses.slice(0, 6).map((course) => (
                   <Card
@@ -571,44 +659,6 @@ export default function FeaturedExamsAdmin() {
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-[#0C1A35] pb-2 border-b">SEO Meta Tags</h3>
-                  
-                  <div>
-                    <Label htmlFor="meta_title">Meta Title</Label>
-                    <Input
-                      id="meta_title"
-                      value={newCourse.meta_title}
-                      onChange={(e) => setNewCourse({ ...newCourse, meta_title: e.target.value })}
-                      placeholder="Exam Name - Practice Tests"
-                      className="mt-1"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="meta_keywords">Meta Keywords</Label>
-                    <Input
-                      id="meta_keywords"
-                      value={newCourse.meta_keywords}
-                      onChange={(e) => setNewCourse({ ...newCourse, meta_keywords: e.target.value })}
-                      placeholder="comma, separated, keywords"
-                      className="mt-1"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="meta_description">Meta Description</Label>
-                    <Textarea
-                      id="meta_description"
-                      value={newCourse.meta_description}
-                      onChange={(e) => setNewCourse({ ...newCourse, meta_description: e.target.value })}
-                      placeholder="Description for search results"
-                      rows={3}
-                      className="mt-1"
-                    />
-                  </div>
-                </div>
-
                 <div className="flex gap-3 pt-4 border-t">
                   <Button type="submit" className="flex-1 bg-[#1A73E8] hover:bg-[#1557B0]">
                     <Plus className="w-4 h-4 mr-2" />
@@ -625,9 +675,7 @@ export default function FeaturedExamsAdmin() {
                         code: "",
                         provider: "",
                         category: "",
-                        meta_title: "",
-                        meta_keywords: "",
-                        meta_description: "",
+                        badge: "",
                       });
                     }}
                   >

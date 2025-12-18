@@ -28,7 +28,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Edit, Trash2, Eye } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
@@ -46,24 +46,81 @@ export default function PopularProvidersAdmin() {
     name: "",
     icon: "Cloud",
     slug: "",
-    meta_title: "",
-    meta_keywords: "",
-    meta_description: "",
+    logo_url: "",
     order: 0,
     is_active: true
   });
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
   const [removeLogo, setRemoveLogo] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  
+  // Cloudinary configuration
+  const CLOUD_NAME = "dhy0krkef";
+  const UPLOAD_PRESET = "preptara";
   const [carouselSpeed, setCarouselSpeed] = useState(1500);
   const [logoSize, setLogoSize] = useState(80);
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [settingsMessage, setSettingsMessage] = useState("");
   
+  const [sectionSettings, setSectionSettings] = useState({
+    heading: "Popular Certification Providers",
+    subtitle: "Trusted by professionals worldwide",
+  });
+  
   useEffect(() => {
     fetchProviders();
     fetchCarouselSettings();
+    fetchSectionSettings();
   }, []);
+  
+  const fetchSectionSettings = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/home/admin/popular-providers-section/`, {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        }
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.data) {
+          setSectionSettings(data.data);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching section settings:", error);
+    }
+  };
+  
+  const handleSectionSettingsUpdate = async () => {
+    setLoading(true);
+    setMessage("");
+    
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/home/admin/popular-providers-section/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        },
+        body: JSON.stringify(sectionSettings),
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        setMessage("✅ Section settings updated successfully!");
+        setTimeout(() => setMessage(""), 3000);
+      } else {
+        setMessage("❌ Error: " + (data.error || "Failed to save"));
+      }
+    } catch (err) {
+      setMessage("❌ Error: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
   
   const fetchProviders = async () => {
     try {
@@ -88,9 +145,7 @@ export default function PopularProvidersAdmin() {
       name: "",
       icon: "Cloud",
       slug: "",
-      meta_title: "",
-      meta_keywords: "",
-      meta_description: "",
+      logo_url: "",
       order: 0,
       is_active: true
     });
@@ -106,9 +161,7 @@ export default function PopularProvidersAdmin() {
       name: provider.name || "",
       icon: provider.icon || "Cloud",
       slug: provider.slug || "",
-      meta_title: provider.meta_title || "",
-      meta_keywords: provider.meta_keywords || "",
-      meta_description: provider.meta_description || "",
+      logo_url: provider.logo_url || "",
       order: provider.order || 0,
       is_active: provider.is_active !== false
     });
@@ -118,17 +171,49 @@ export default function PopularProvidersAdmin() {
     setDialogOpen(true);
   };
   
-  const handleLogoChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setLogoFile(file);
-      setRemoveLogo(false); // Reset remove flag when new file is selected
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setLogoPreview(reader.result);
-      };
-      reader.readAsDataURL(file);
+  const handleLogoChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingLogo(true);
+    setRemoveLogo(false);
+    
+    // Create preview immediately
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setLogoPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+
+    // Upload to Cloudinary
+    const imageData = new FormData();
+    imageData.append("file", file);
+    imageData.append("upload_preset", UPLOAD_PRESET);
+
+    try {
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+        method: "POST",
+        body: imageData,
+      });
+
+      const data = await res.json();
+      if (data.secure_url) {
+        setFormData((prev) => ({ ...prev, logo_url: data.secure_url }));
+        setLogoPreview(data.secure_url);
+        setMessage("✅ Logo uploaded successfully!");
+        setTimeout(() => setMessage(""), 3000);
+      } else {
+        setMessage("❌ Logo upload failed!");
+        setLogoPreview(null);
+        setTimeout(() => setMessage(""), 3000);
+      }
+    } catch (err) {
+      console.error("Cloudinary Upload Error:", err);
+      setMessage("❌ Logo upload failed!");
+      setLogoPreview(null);
+      setTimeout(() => setMessage(""), 3000);
+    } finally {
+      setUploadingLogo(false);
     }
   };
   
@@ -136,6 +221,7 @@ export default function PopularProvidersAdmin() {
     setRemoveLogo(true);
     setLogoFile(null);
     setLogoPreview(null);
+    setFormData((prev) => ({ ...prev, logo_url: "" }));
     // Clear the file input
     const fileInput = document.getElementById('logo');
     if (fileInput) {
@@ -159,34 +245,29 @@ export default function PopularProvidersAdmin() {
         ? `${API_BASE_URL}/api/providers/admin/${editing.id}/update/`
         : `${API_BASE_URL}/api/providers/admin/create/`;
       
-      // Create FormData for file upload
-      const submitData = new FormData();
-      submitData.append('name', formData.name);
-      submitData.append('icon', formData.icon);
-      submitData.append('slug', slugToUse);
-      submitData.append('meta_title', formData.meta_title || '');
-      submitData.append('meta_keywords', formData.meta_keywords || '');
-      submitData.append('meta_description', formData.meta_description || '');
-      submitData.append('order', formData.order || 0);
-      submitData.append('is_active', formData.is_active);
+      // Send as JSON with logo_url from Cloudinary
+      const submitData = {
+        name: formData.name,
+        icon: formData.icon,
+        slug: slugToUse,
+        order: formData.order || 0,
+        is_active: formData.is_active,
+      };
       
-      // Add logo file if selected
-      if (logoFile) {
-        submitData.append('logo', logoFile);
-      }
-      
-      // Add flag to remove logo if requested
-      if (removeLogo) {
-        submitData.append('remove_logo', 'true');
+      // Add logo_url if available (from Cloudinary)
+      if (formData.logo_url && !removeLogo) {
+        submitData.logo_url = formData.logo_url;
+      } else if (removeLogo) {
+        submitData.logo_url = '';
       }
       
       const res = await fetch(url, {
         method: editing ? "PUT" : "POST",
         headers: {
+          "Content-Type": "application/json",
           "Authorization": `Bearer ${localStorage.getItem("token")}`
-          // Don't set Content-Type header - browser will set it with boundary for FormData
         },
-        body: submitData
+        body: JSON.stringify(submitData)
       });
       
       const data = await res.json();
@@ -369,7 +450,7 @@ export default function PopularProvidersAdmin() {
                         accept="image/*"
                         onChange={handleLogoChange}
                         className="cursor-pointer flex-1"
-                        disabled={removeLogo}
+                        disabled={removeLogo || uploadingLogo}
                       />
                       {logoPreview && !removeLogo && (
                         <Button
@@ -377,12 +458,15 @@ export default function PopularProvidersAdmin() {
                           variant="destructive"
                           size="sm"
                           onClick={handleRemoveLogo}
+                          disabled={uploadingLogo}
                         >
                           Remove Logo
                         </Button>
                       )}
                     </div>
-                    <p className="text-sm text-gray-500 mt-1">Upload logo image. If provided, logo will be shown instead of icon.</p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {uploadingLogo ? "Uploading to Cloudinary..." : "Upload logo image to Cloudinary. If provided, logo will be shown instead of icon."}
+                    </p>
                     {logoPreview && !removeLogo && (
                       <div className="mt-3">
                         <p className="text-sm font-medium mb-2">Preview:</p>
@@ -391,6 +475,9 @@ export default function PopularProvidersAdmin() {
                           alt="Logo preview" 
                           className="w-24 h-24 object-contain border border-gray-200 rounded-lg p-2 bg-white"
                         />
+                        {formData.logo_url && (
+                          <p className="text-xs text-gray-500 mt-1">Cloudinary URL: {formData.logo_url.substring(0, 50)}...</p>
+                        )}
                       </div>
                     )}
                     {removeLogo && (
@@ -424,45 +511,6 @@ export default function PopularProvidersAdmin() {
                   </div>
                 </div>
                 
-                {/* SEO Fields */}
-                <div className="border-t pt-4 space-y-4">
-                  <h3 className="font-semibold">SEO Settings (Optional)</h3>
-                  
-                  <div>
-                    <Label htmlFor="meta_title">Meta Title</Label>
-                    <Input
-                      id="meta_title"
-                      value={formData.meta_title}
-                      onChange={(e) => setFormData({...formData, meta_title: e.target.value})}
-                      placeholder="AWS Certification Practice Exams"
-                    />
-                    <p className="text-sm text-gray-500 mt-1">Recommended: 50-60 characters</p>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="meta_keywords">Meta Keywords</Label>
-                    <Input
-                      id="meta_keywords"
-                      value={formData.meta_keywords}
-                      onChange={(e) => setFormData({...formData, meta_keywords: e.target.value})}
-                      placeholder="AWS, certification, cloud computing"
-                    />
-                    <p className="text-sm text-gray-500 mt-1">Comma-separated keywords</p>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="meta_description">Meta Description</Label>
-                    <Textarea
-                      id="meta_description"
-                      value={formData.meta_description}
-                      onChange={(e) => setFormData({...formData, meta_description: e.target.value})}
-                      placeholder="Practice questions for AWS certification exams..."
-                      rows={3}
-                    />
-                    <p className="text-sm text-gray-500 mt-1">Recommended: 150-160 characters</p>
-                  </div>
-                </div>
-                
                 <div className="flex gap-2 pt-4">
                   <Button type="submit" disabled={loading} className="flex-1">
                     {loading ? "Saving..." : (editing ? "Update Provider" : "Create Provider")}
@@ -489,6 +537,46 @@ export default function PopularProvidersAdmin() {
           {message}
         </div>
       )}
+
+      {/* Section Settings */}
+      <Card className="mb-6">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Settings className="w-5 h-5 text-[#1A73E8]" />
+              <CardTitle>Section Settings</CardTitle>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <Label>Section Heading</Label>
+              <Input
+                value={sectionSettings.heading}
+                onChange={(e) => setSectionSettings({...sectionSettings, heading: e.target.value})}
+                placeholder="Popular Certification Providers"
+              />
+            </div>
+            <div>
+              <Label>Section Subtitle</Label>
+              <Input
+                value={sectionSettings.subtitle}
+                onChange={(e) => setSectionSettings({...sectionSettings, subtitle: e.target.value})}
+                placeholder="Trusted by professionals worldwide"
+              />
+            </div>
+          </div>
+          
+          <Button 
+            onClick={handleSectionSettingsUpdate} 
+            disabled={loading}
+            className="bg-[#1A73E8] hover:bg-[#1557B0]"
+          >
+            {loading ? "Saving..." : "Save Section Settings"}
+          </Button>
+        </CardContent>
+      </Card>
 
       {/* Carousel Settings Card */}
       <Card className="mb-6">
@@ -633,6 +721,14 @@ export default function PopularProvidersAdmin() {
             <CardTitle>Preview (How it appears on home page)</CardTitle>
           </CardHeader>
           <CardContent>
+            <div className="mb-6">
+              <h2 className="text-3xl font-bold text-center mb-3 text-[#0C1A35]">
+                {sectionSettings.heading || "Popular Certification Providers"}
+              </h2>
+              <p className="text-center text-[#0C1A35]/70 text-lg mb-8 max-w-2xl mx-auto">
+                {sectionSettings.subtitle || "Trusted by professionals worldwide"}
+              </p>
+            </div>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               {providers.filter(p => p.is_active).slice(0, 10).map((provider) => (
                 <div

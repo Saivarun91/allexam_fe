@@ -5,14 +5,29 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Award, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { getExamUrl } from "@/lib/utils";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
 const RecentlyUpdated = () => {
   const [exams, setExams] = useState([]);
+  const [sectionSettings, setSectionSettings] = useState({
+    heading: "Recently Updated Exams",
+    subtitle: "",
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Fetch section settings
+    fetch(`${API_BASE_URL}/api/home/recently-updated-section/`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.data) {
+          setSectionSettings(data.data);
+        }
+      })
+      .catch((err) => console.error("Error fetching section settings:", err));
+    
     fetch(`${API_BASE_URL}/api/home/recently-updated-exams/`)
       .then((res) => res.json())
       .then((data) => {
@@ -43,9 +58,14 @@ const RecentlyUpdated = () => {
   return (
     <section className="py-12 md:py-20 bg-gradient-to-b from-[#0C1A35]/2 to-white">
       <div className="container mx-auto px-4">
-        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-8 md:mb-12 text-[#0C1A35] px-2">
-          Recently Updated Exams
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-3 md:mb-4 text-[#0C1A35] px-2">
+          {sectionSettings.heading || "Recently Updated Exams"}
         </h2>
+        {sectionSettings.subtitle && (
+          <p className="text-center text-[#0C1A35]/70 text-sm sm:text-base md:text-lg mb-8 md:mb-12 max-w-2xl mx-auto px-2">
+            {sectionSettings.subtitle}
+          </p>
+        )}
 
         <div className="max-w-5xl mx-auto">
           <div className="max-h-[600px] overflow-y-auto space-y-4 pr-2 custom-scrollbar">

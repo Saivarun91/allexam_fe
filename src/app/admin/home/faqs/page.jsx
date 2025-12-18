@@ -21,7 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Edit, Trash2, Eye, HelpCircle } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, HelpCircle, Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 
@@ -40,9 +40,63 @@ export default function FAQsAdmin() {
     order: 0,
   });
   
+  const [sectionSettings, setSectionSettings] = useState({
+    heading: "Frequently Asked Questions",
+    subtitle: "Find answers to common questions",
+  });
+  
   useEffect(() => {
     fetchFAQs();
+    fetchSectionSettings();
   }, []);
+  
+  const fetchSectionSettings = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/home/admin/faqs-section/`, {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        }
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.data) {
+          setSectionSettings(data.data);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching section settings:", error);
+    }
+  };
+  
+  const handleSectionSettingsUpdate = async () => {
+    setLoading(true);
+    setMessage("");
+    
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/home/admin/faqs-section/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        },
+        body: JSON.stringify(sectionSettings),
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        setMessage("✅ Section settings updated successfully!");
+        setTimeout(() => setMessage(""), 3000);
+      } else {
+        setMessage("❌ Error: " + (data.error || "Failed to save"));
+      }
+    } catch (err) {
+      setMessage("❌ Error: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
   
   const fetchFAQs = async () => {
     try {
@@ -275,6 +329,46 @@ export default function FAQsAdmin() {
           {message}
         </motion.div>
       )}
+
+      {/* Section Settings */}
+      <Card className="mb-6">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Settings className="w-5 h-5 text-[#1A73E8]" />
+              <CardTitle>Section Settings</CardTitle>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <Label>Section Heading</Label>
+              <Input
+                value={sectionSettings.heading}
+                onChange={(e) => setSectionSettings({...sectionSettings, heading: e.target.value})}
+                placeholder="Frequently Asked Questions"
+              />
+            </div>
+            <div>
+              <Label>Section Subtitle</Label>
+              <Input
+                value={sectionSettings.subtitle}
+                onChange={(e) => setSectionSettings({...sectionSettings, subtitle: e.target.value})}
+                placeholder="Find answers to common questions"
+              />
+            </div>
+          </div>
+          
+          <Button 
+            onClick={handleSectionSettingsUpdate} 
+            disabled={loading}
+            className="bg-[#1A73E8] hover:bg-[#1557B0]"
+          >
+            {loading ? "Saving..." : "Save Section Settings"}
+          </Button>
+        </CardContent>
+      </Card>
       
       {/* FAQs Table */}
       <Card className="border-[#D3E3FF]">

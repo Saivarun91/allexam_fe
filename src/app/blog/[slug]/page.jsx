@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Calendar, User, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import BlogJsonLd from "@/components/BlogJsonLd";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
@@ -46,6 +47,17 @@ export default function BlogDetailPage() {
             document.head.appendChild(metaDesc);
           }
           metaDesc.setAttribute("content", metaDescription);
+
+          // Set canonical URL
+          const currentPath = window.location.pathname;
+          const canonicalUrl = `https://allexamquestions.com${currentPath}`;
+          let canonicalLink = document.querySelector('link[rel="canonical"]');
+          if (!canonicalLink) {
+            canonicalLink = document.createElement("link");
+            canonicalLink.setAttribute("rel", "canonical");
+            document.head.appendChild(canonicalLink);
+          }
+          canonicalLink.setAttribute("href", canonicalUrl);
         } else {
           throw new Error("Blog post not found");
         }
@@ -94,6 +106,7 @@ export default function BlogDetailPage() {
 
   return (
     <div className="min-h-screen bg-white">
+      {blog && <BlogJsonLd blog={blog} />}
       {/* Header with Back Button */}
       <div className="bg-white py-6 px-4">
         <div className="container mx-auto max-w-4xl">

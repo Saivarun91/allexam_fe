@@ -34,6 +34,20 @@ export default function BlogPage() {
     fetchBlogs();
   }, []);
 
+  // Set canonical URL for blog listing page
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const canonicalUrl = "https://allexamquestions.com/blog";
+      let canonicalLink = document.querySelector('link[rel="canonical"]');
+      if (!canonicalLink) {
+        canonicalLink = document.createElement("link");
+        canonicalLink.setAttribute("rel", "canonical");
+        document.head.appendChild(canonicalLink);
+      }
+      canonicalLink.setAttribute("href", canonicalUrl);
+    }
+  }, []);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-white">

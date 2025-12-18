@@ -230,7 +230,7 @@ const Header = () => {
                   {/* Menu Items */}
                   <div className="py-1">
                     <Link
-                      href="/Dashboard"
+                      href="/dashboard"
                       onClick={() => setShowDropdown(false)}
                       className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#0C1A35] hover:bg-[#1A73E8]/5 transition-colors"
                     >
@@ -376,7 +376,7 @@ const Header = () => {
                     <p className="text-xs text-[#0C1A35]/60 truncate">{userEmail}</p>
                   </div>
                   <Link
-                    href="/Dashboard"
+                    href="/dashboard"
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center gap-3 px-4 py-3 text-sm text-[#0C1A35] hover:bg-gray-50 transition-colors font-semibold"
                   >

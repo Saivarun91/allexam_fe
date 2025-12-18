@@ -48,6 +48,7 @@ export default function AuthPage() {
         localStorage.setItem("token", res.data.token);
         localStorage.setItem("admin_id", res.data.admin?.id || "");
         localStorage.setItem("user_name", res.data.admin?.name || "Admin");
+        localStorage.setItem("user_email", res.data.admin?.email || loginEmail);
         localStorage.setItem("role", res.data.admin?.role || "admin");
 
         login(res.data.token);

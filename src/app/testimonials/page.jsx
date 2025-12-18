@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Star, Quote, CheckCircle2 } from "lucide-react";
+import ReviewsJsonLd from "@/components/ReviewsJsonLd";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
 
@@ -31,6 +32,7 @@ export default function TestimonialsPage() {
 
   return (
     <div className="py-20 bg-gradient-to-br from-[#F5F8FC] to-white">
+      {testimonials.length > 0 && <ReviewsJsonLd testimonials={testimonials} itemName="AllExamQuestions" />}
         <div className="container mx-auto px-4">
           {/* Header Section */}
           <div className="text-center mb-12">

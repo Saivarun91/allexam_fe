@@ -25,6 +25,10 @@ const iconMap = {
 
 export default function PopularProviders() {
   const [providers, setProviders] = useState([]);
+  const [sectionSettings, setSectionSettings] = useState({
+    heading: "Popular Providers",
+    subtitle: "Practice questions from the world's leading certification bodies",
+  });
   const [loading, setLoading] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
   const [carouselSpeed, setCarouselSpeed] = useState(1500); // Default 1.5 seconds
@@ -61,6 +65,18 @@ export default function PopularProviders() {
     }
 
     loadProviders();
+  }, [API_BASE_URL]);
+  
+  // Fetch section settings
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/home/popular-providers-section/`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.data) {
+          setSectionSettings(data.data);
+        }
+      })
+      .catch((err) => console.error("Error fetching section settings:", err));
   }, [API_BASE_URL]);
 
   // Fetch carousel settings
@@ -124,12 +140,14 @@ export default function PopularProviders() {
     <section id="popular-providers" className="py-12 md:py-20 bg-[#F5F8FC]">
       <div className="container mx-auto px-4">
         <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-3 md:mb-4 text-[#0C1A35] px-2">
-          Popular Providers
+          {sectionSettings.heading || "Popular Providers"}
         </h2>
 
-        <p className="text-center text-[#0C1A35]/70 mb-8 md:mb-12 text-sm sm:text-base md:text-lg px-2">
-          Practice questions from the world's leading certification bodies
-        </p>
+        {sectionSettings.subtitle && (
+          <p className="text-center text-[#0C1A35]/70 mb-8 md:mb-12 text-sm sm:text-base md:text-lg px-2">
+            {sectionSettings.subtitle}
+          </p>
+        )}
 
         {/* Infinite Carousel */}
         <div 

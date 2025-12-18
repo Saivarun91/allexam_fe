@@ -21,6 +21,7 @@ const HeroSection = () => {
   const [heroData, setHeroData] = useState(null);
   const [selectedProvider, setSelectedProvider] = useState("");
   const [searchKeyword, setSearchKeyword] = useState("");
+  const [providers, setProviders] = useState([]);
 
   useEffect(() => {
     // Defer non-critical API call using requestIdleCallback to avoid render blocking
@@ -46,23 +47,43 @@ const HeroSection = () => {
     }
   }, []);
 
+  // Fetch providers
+  useEffect(() => {
+    const fetchProviders = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/providers/`);
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          const activeProviders = data.filter(p => p.is_active !== false);
+          setProviders(activeProviders);
+        }
+      } catch (err) {
+        console.error("Error fetching providers:", err);
+        setProviders([]);
+      }
+    };
+    fetchProviders();
+  }, []);
+
   const handleSearch = () => {
-    // Build query parameters
-    const params = new URLSearchParams();
+    // Build SEO-friendly URL path (no query parameters)
+    let targetUrl = "/exams";
     
-    // If provider is selected, add it to query params
-    if (selectedProvider) {
-      params.set("provider", selectedProvider);
+    if (selectedProvider && searchKeyword.trim()) {
+      // Provider + keyword: /exams/provider/search/keyword
+      const keywordSlug = createSlug(searchKeyword.trim());
+      targetUrl = `/exams/${selectedProvider}/search/${encodeURIComponent(keywordSlug)}`;
+    } else if (selectedProvider) {
+      // Provider only: /exams/provider
+      targetUrl = `/exams/${selectedProvider}`;
+    } else if (searchKeyword.trim()) {
+      // Keyword only: /exams/search/keyword
+      const keywordSlug = createSlug(searchKeyword.trim());
+      targetUrl = `/exams/search/${encodeURIComponent(keywordSlug)}`;
     }
     
-    // If search keyword is entered, add it to query params
-    if (searchKeyword.trim()) {
-      params.set("q", searchKeyword.trim());
-    }
-    
-    // Always redirect to /exams page with query parameters
-    const queryString = params.toString();
-    router.push(`/exams${queryString ? `?${queryString}` : ""}`);
+    // Navigate to the SEO-friendly URL
+    router.push(targetUrl);
   };
 
   const handleKeyPress = (e) => {
@@ -145,11 +166,11 @@ const HeroSection = () => {
                   <SelectValue placeholder="Select Provider" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="aws">AWS</SelectItem>
-                  <SelectItem value="azure">Microsoft Azure</SelectItem>
-                  <SelectItem value="google">Google Cloud</SelectItem>
-                  <SelectItem value="cisco">Cisco</SelectItem>
-                  <SelectItem value="comptia">CompTIA</SelectItem>
+                  {providers.map((provider) => (
+                    <SelectItem key={provider.id} value={provider.slug}>
+                      {provider.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
 

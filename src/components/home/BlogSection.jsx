@@ -10,11 +10,25 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8
 
 const BlogSection = () => {
   const [articles, setArticles] = useState([]);
+  const [sectionSettings, setSectionSettings] = useState({
+    heading: "Latest Blog Posts",
+    subtitle: "Stay updated with certification tips and news",
+  });
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const carouselRef = useRef(null);
 
   useEffect(() => {
+    // Fetch section settings
+    fetch(`${API_BASE_URL}/api/home/blog-posts-section/`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.data) {
+          setSectionSettings(data.data);
+        }
+      })
+      .catch((err) => console.error("Error fetching section settings:", err));
+    
     const fetchBlogs = async () => {
       try {
         const res = await fetch(`${API_BASE_URL}/api/home/blog-posts/`);
@@ -85,11 +99,13 @@ const BlogSection = () => {
     <section className="py-12 md:py-20 bg-[#F5F8FC]">
       <div className="container mx-auto px-4">
         <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-3 md:mb-4 text-[#0C1A35] px-2">
-          Preparation Guides & Tips
+          {sectionSettings.heading || "Latest Blog Posts"}
         </h2>
-        <p className="text-center text-[#0C1A35]/70 mb-8 md:mb-12 text-sm sm:text-base md:text-lg px-2">
-          Expert advice and strategies to maximize your exam success
-        </p>
+        {sectionSettings.subtitle && (
+          <p className="text-center text-[#0C1A35]/70 mb-8 md:mb-12 text-sm sm:text-base md:text-lg px-2">
+            {sectionSettings.subtitle}
+          </p>
+        )}
 
         {/* Carousel Container */}
         <div className="relative">

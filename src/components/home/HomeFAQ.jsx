@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import FAQJsonLd from "@/components/FAQJsonLd";
 import {
   Accordion,
   AccordionContent,
@@ -12,9 +13,23 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8
 
 export default function HomeFAQ() {
   const [faqs, setFaqs] = useState([]);
+  const [sectionSettings, setSectionSettings] = useState({
+    heading: "Frequently Asked Questions",
+    subtitle: "Clear answers to the most common questions our learners ask.",
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Fetch section settings
+    fetch(`${API_BASE_URL}/api/home/faqs-section/`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.data) {
+          setSectionSettings(data.data);
+        }
+      })
+      .catch((err) => console.error("Error fetching section settings:", err));
+    
     const fetchFAQs = async () => {
       try {
         const res = await fetch(`${API_BASE_URL}/api/home/faqs/`);
@@ -54,16 +69,25 @@ export default function HomeFAQ() {
   //   return null;
   // }
 
+  // Convert API format to simple format for JSON-LD
+  const simpleFAQs = faqs.map((faq) => ({
+    question: faq.question,
+    answer: faq.answer,
+  }));
+
   return (
     <section className="py-12 md:py-16 bg-white">
+      {simpleFAQs.length > 0 && <FAQJsonLd faqs={simpleFAQs} />}
       <div className="container mx-auto px-4 max-w-4xl">
         <div className="text-center mb-8 md:mb-12">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 md:mb-4 text-[#0C1A35] px-2">
-            Frequently Asked Questions
+            {sectionSettings.heading || "Frequently Asked Questions"}
           </h2>
-          <p className="text-[#0C1A35]/70 text-sm sm:text-base md:text-lg px-2">
-            Clear answers to the most common questions our learners ask.
-          </p>
+          {sectionSettings.subtitle && (
+            <p className="text-[#0C1A35]/70 text-sm sm:text-base md:text-lg px-2">
+              {sectionSettings.subtitle}
+            </p>
+          )}
         </div>
 
         {faqs.length > 0 ? (

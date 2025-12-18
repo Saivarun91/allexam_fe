@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Edit, Eye, Settings, Cloud, Shield, Briefcase, Database, Code, TrendingUp, Trash2, X } from "lucide-react";
+import { Plus, Edit, Eye, Cloud, Shield, Briefcase, Database, Code, TrendingUp, Trash2, X, Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
@@ -48,14 +48,65 @@ export default function TopCategoriesAdmin() {
     title: "",
     description: "",
     icon: ICON_OPTIONS[0],
-    meta_title: "",
-    meta_keywords: "",
-    meta_description: "",
+  });
+  
+  const [sectionSettings, setSectionSettings] = useState({
+    heading: "Top Certification Categories",
+    subtitle: "Browse exams by category",
   });
   
   useEffect(() => {
     fetchCategories();
+    fetchSectionSettings();
   }, []);
+  
+  const fetchSectionSettings = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/home/admin/top-categories-section/`, {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        }
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.data) {
+          setSectionSettings(data.data);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching section settings:", error);
+    }
+  };
+  
+  const handleSectionSettingsUpdate = async () => {
+    setLoading(true);
+    setMessage("");
+    
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/home/admin/top-categories-section/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        },
+        body: JSON.stringify(sectionSettings),
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        setMessage("✅ Section settings updated successfully!");
+        setTimeout(() => setMessage(""), 3000);
+      } else {
+        setMessage("❌ Error: " + (data.error || "Failed to save"));
+      }
+    } catch (err) {
+      setMessage("❌ Error: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
   
   const fetchCategories = async () => {
     setLoading(true);
@@ -131,9 +182,6 @@ export default function TopCategoriesAdmin() {
           title: categoryData.title,
           description: categoryData.description,
           icon: categoryData.icon,
-          meta_title: categoryData.meta_title,
-          meta_keywords: categoryData.meta_keywords,
-          meta_description: categoryData.meta_description,
         }),
       });
 
@@ -146,9 +194,6 @@ export default function TopCategoriesAdmin() {
           title: "",
           description: "",
           icon: ICON_OPTIONS[0],
-          meta_title: "",
-          meta_keywords: "",
-          meta_description: "",
         });
         fetchCategories();
         setTimeout(() => setMessage(""), 3000);
@@ -173,14 +218,6 @@ export default function TopCategoriesAdmin() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button
-            onClick={() => window.open("/admin/home/top-categories-section", "_self")}
-            variant="outline"
-            className="gap-2"
-          >
-            <Settings className="w-4 h-4" />
-            Section Settings
-          </Button>
           <Button
             onClick={() => window.open("/", "_blank")}
             variant="outline"
@@ -218,6 +255,46 @@ export default function TopCategoriesAdmin() {
           {message}
         </motion.div>
       )}
+
+      {/* Section Settings */}
+      <Card className="mb-6">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Settings className="w-5 h-5 text-[#1A73E8]" />
+              <CardTitle>Section Settings</CardTitle>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <Label>Section Heading</Label>
+              <Input
+                value={sectionSettings.heading}
+                onChange={(e) => setSectionSettings({...sectionSettings, heading: e.target.value})}
+                placeholder="Top Certification Categories"
+              />
+            </div>
+            <div>
+              <Label>Section Subtitle</Label>
+              <Input
+                value={sectionSettings.subtitle}
+                onChange={(e) => setSectionSettings({...sectionSettings, subtitle: e.target.value})}
+                placeholder="Browse exams by category"
+              />
+            </div>
+          </div>
+          
+          <Button 
+            onClick={handleSectionSettingsUpdate} 
+            disabled={loading}
+            className="bg-[#1A73E8] hover:bg-[#1557B0]"
+          >
+            {loading ? "Saving..." : "Save Section Settings"}
+          </Button>
+        </CardContent>
+      </Card>
       
       {/* Categories Table */}
       <Card>
@@ -233,20 +310,19 @@ export default function TopCategoriesAdmin() {
                   <TableHead>Title</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead>Slug</TableHead>
-                  <TableHead className="w-32">SEO</TableHead>
                   <TableHead className="text-right w-32">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-12 text-gray-500">
+                    <TableCell colSpan={5} className="text-center py-12 text-gray-500">
                       Loading categories...
                     </TableCell>
                   </TableRow>
                 ) : categories.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-12 text-gray-500">
+                    <TableCell colSpan={5} className="text-center py-12 text-gray-500">
                       <div className="flex flex-col items-center gap-3">
                         <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
                           <Plus className="w-8 h-8 text-gray-400" />
@@ -262,7 +338,6 @@ export default function TopCategoriesAdmin() {
                 ) : (
                   categories.map((category) => {
                     const IconComp = ICON_MAP[category.icon] || Cloud;
-                    const hasSEO = category.meta_title || category.meta_keywords || category.meta_description;
                     
                     return (
                       <TableRow key={category.slug}>
@@ -277,17 +352,6 @@ export default function TopCategoriesAdmin() {
                         </TableCell>
                         <TableCell>
                           <code className="text-xs bg-gray-100 px-2 py-1 rounded">{category.slug}</code>
-                        </TableCell>
-                        <TableCell>
-                          {hasSEO ? (
-                            <Badge variant="default" className="bg-green-100 text-green-700">
-                              SEO ✓
-                            </Badge>
-                          ) : (
-                            <Badge variant="secondary" className="bg-gray-100 text-gray-500">
-                              No SEO
-                            </Badge>
-                          )}
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-2 justify-end">
@@ -330,9 +394,12 @@ export default function TopCategoriesAdmin() {
           </CardHeader>
           <CardContent>
             <div className="bg-[#F5F8FC] p-8 rounded-lg">
-              <h2 className="text-3xl font-bold text-center mb-8 text-[#0C1A35]">
-                Top Certification Categories
+              <h2 className="text-3xl font-bold text-center mb-3 text-[#0C1A35]">
+                {sectionSettings.heading || "Top Certification Categories"}
               </h2>
+              <p className="text-center text-[#0C1A35]/70 text-lg mb-8 max-w-2xl mx-auto">
+                {sectionSettings.subtitle || "Browse exams by category"}
+              </p>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {categories.slice(0, 6).map((category) => {
                   const IconComp = ICON_MAP[category.icon] || Cloud;
@@ -429,44 +496,6 @@ export default function TopCategoriesAdmin() {
                         <option key={opt} value={opt}>{opt}</option>
                       ))}
                     </select>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-[#0C1A35] pb-2 border-b">SEO Meta Tags</h3>
-                  
-                  <div>
-                    <Label htmlFor="meta_title">Meta Title</Label>
-                    <Input
-                      id="meta_title"
-                      value={categoryData.meta_title}
-                      onChange={(e) => setCategoryData({ ...categoryData, meta_title: e.target.value })}
-                      placeholder="Category Name - Best Practice Tests"
-                      className="mt-1"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="meta_keywords">Meta Keywords</Label>
-                    <Input
-                      id="meta_keywords"
-                      value={categoryData.meta_keywords}
-                      onChange={(e) => setCategoryData({ ...categoryData, meta_keywords: e.target.value })}
-                      placeholder="comma, separated, keywords"
-                      className="mt-1"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="meta_description">Meta Description</Label>
-                    <Textarea
-                      id="meta_description"
-                      value={categoryData.meta_description}
-                      onChange={(e) => setCategoryData({ ...categoryData, meta_description: e.target.value })}
-                      placeholder="Description for search results"
-                      rows={3}
-                      className="mt-1"
-                    />
                   </div>
                 </div>
 

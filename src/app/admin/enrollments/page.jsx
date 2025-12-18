@@ -211,6 +211,11 @@ export default function EnrollmentsPage() {
                       {enroll.payment ? (
                         <div className="text-xs">
                           <div className="font-medium">₹{enroll.payment.amount}</div>
+                          {enroll.payment.coupon_code && enroll.payment.discount_amount > 0 && (
+                            <div className="text-xs text-blue-600 mt-1">
+                              Coupon: {enroll.payment.coupon_code} (-₹{enroll.payment.discount_amount})
+                            </div>
+                          )}
                           <div className={`text-xs ${enroll.payment.status === "completed" ? "text-green-600" : "text-orange-600"}`}>
                             {enroll.payment.status}
                           </div>
@@ -268,7 +273,13 @@ export default function EnrollmentsPage() {
                 <div className="space-y-3 text-gray-700 pl-4">
                   <div className="flex items-start"><span className="font-medium min-w-[140px]">Payment ID:</span> <span className="text-gray-800 font-mono text-sm break-all">{selectedStudent.payment.razorpay_payment_id || "N/A"}</span></div>
                   <div className="flex items-start"><span className="font-medium min-w-[140px]">Order ID:</span> <span className="text-gray-800 font-mono text-sm break-all">{selectedStudent.payment.razorpay_order_id}</span></div>
-                  <div className="flex items-start"><span className="font-medium min-w-[140px]">Amount:</span> <span className="text-gray-800 font-semibold">{selectedStudent.payment.currency || "INR"} {selectedStudent.payment.amount}</span></div>
+                  <div className="flex items-start"><span className="font-medium min-w-[140px]">Amount Paid:</span> <span className="text-gray-800 font-semibold">{selectedStudent.payment.currency || "INR"} {selectedStudent.payment.amount}</span></div>
+                  {selectedStudent.payment.coupon_code && selectedStudent.payment.discount_amount > 0 && (
+                    <>
+                      <div className="flex items-start"><span className="font-medium min-w-[140px]">Coupon Code:</span> <span className="text-gray-800 font-semibold text-blue-600">{selectedStudent.payment.coupon_code}</span></div>
+                      <div className="flex items-start"><span className="font-medium min-w-[140px]">Discount Applied:</span> <span className="text-gray-800 font-semibold text-green-600">-{selectedStudent.payment.currency || "INR"} {selectedStudent.payment.discount_amount}</span></div>
+                    </>
+                  )}
                   <div className="flex items-start"><span className="font-medium min-w-[140px]">Payment Status:</span> <span className={`font-semibold ${selectedStudent.payment.status === "completed" ? "text-green-600" : selectedStudent.payment.status === "pending" ? "text-orange-600" : "text-red-500"}`}>{selectedStudent.payment.status.toUpperCase()}</span></div>
                   {selectedStudent.payment.paid_at && (<div className="flex items-start"><span className="font-medium min-w-[140px]">Paid At:</span> <span className="text-gray-800">{new Date(selectedStudent.payment.paid_at).toLocaleString()}</span></div>)}
                 </div>

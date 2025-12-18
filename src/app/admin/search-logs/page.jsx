@@ -41,13 +41,6 @@ export default function SearchLogsPage() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Fetch logs when page or search query changes
-  useEffect(() => {
-    if (token) {
-      fetchLogs();
-    }
-  }, [page, debouncedSearchQuery, token]);
-
   const fetchLogs = useCallback(async () => {
     if (!token) {
       setError("Authentication required");
@@ -101,6 +94,13 @@ export default function SearchLogsPage() {
       setLoading(false);
     }
   }, [page, debouncedSearchQuery, token, API_BASE_URL]);
+
+  // Fetch logs when page or search query changes
+  useEffect(() => {
+    if (token) {
+      fetchLogs();
+    }
+  }, [page, debouncedSearchQuery, token, fetchLogs]);
 
   const handleRefresh = () => {
     setPage(1);

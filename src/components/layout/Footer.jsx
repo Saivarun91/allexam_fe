@@ -2,8 +2,10 @@
 
 import { GraduationCap, Facebook, Twitter, Linkedin, Youtube, Shield, Mail, Phone, MapPin, Globe } from "lucide-react";
 import Link from "next/link";
+import { useState, useEffect } from "react";
 import { useSiteName } from "@/hooks/useSiteName";
 import { useContactDetails } from "@/hooks/useContactDetails";
+import { getExamUrl } from "@/lib/utils";
 
 /**
  * Footer Component
@@ -11,18 +13,74 @@ import { useContactDetails } from "@/hooks/useContactDetails";
  * IMPORTANT: This footer is IDENTICAL for both logged-in and non-logged-in users.
  * There is NO conditional rendering based on authentication status.
  * All sections and links are visible and functional for ALL users.
+ * 
+ * This footer dynamically fetches data from the API and only shows what exists in the website.
  */
 const Footer = () => {
   const siteName = useSiteName();
   const contactDetails = useContactDetails();
+  const [providers, setProviders] = useState([]);
+  const [exams, setExams] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const footerLinks = {
-    exams: ["AWS Certification", "Azure Exams", "CompTIA", "Cisco CCNA", "Google Cloud"],
-    providers: ["Amazon Web Services", "Microsoft", "Cisco Systems", "CompTIA", "Google"],
-    resources: ["Study Guides", "Practice Tests", "Exam Simulator", "Blog", "Success Stories", "FAQ"],
-    company: ["About Us", "Contact", "Careers", "Press Kit", "Partners"],
-    legal: ["Privacy Policy", "Terms of Service", "Cookie Policy", "Disclaimer", "Sitemap"],
-  };
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
+
+  // Fetch providers and exams dynamically
+  useEffect(() => {
+    const fetchFooterData = async () => {
+      try {
+        // Fetch providers
+        const providersRes = await fetch(`${API_BASE_URL}/api/providers/`);
+        if (providersRes.ok) {
+          const providersData = await providersRes.json();
+          if (Array.isArray(providersData)) {
+            setProviders(providersData.filter(p => p.is_active !== false).slice(0, 10)); // Limit to 10 providers
+          }
+        }
+
+        // Fetch exams/courses
+        const coursesRes = await fetch(`${API_BASE_URL}/api/courses/`);
+        if (coursesRes.ok) {
+          const coursesData = await coursesRes.json();
+          if (Array.isArray(coursesData)) {
+            // Get unique exam titles, limit to 10
+            const uniqueExams = coursesData
+              .filter(c => c.is_active !== false)
+              .map(c => ({ 
+                title: c.title, 
+                slug: c.slug, 
+                provider: c.provider,
+                provider_slug: c.provider_slug,
+                code: c.code
+              }))
+              .filter((exam, index, self) => 
+                index === self.findIndex(e => e.title === exam.title)
+              )
+              .slice(0, 10);
+            setExams(uniqueExams);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching footer data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFooterData();
+  }, []);
+
+  // Available resources pages (only show what exists)
+  const availableResources = [
+    { name: "Blog", href: "/blog", exists: true },
+    { name: "FAQ", href: "/FAQ", exists: true },
+  ];
+
+  // Company pages (only show if they exist - currently none exist, so empty)
+  const availableCompanyPages = [];
+
+  // Legal pages (only show if they exist - currently none exist, so empty)
+  const availableLegalPages = [];
 
   const socialLinks = [
     { icon: Facebook, label: "Facebook", url: "https://www.facebook.com" },
@@ -38,90 +96,142 @@ const Footer = () => {
   const hasWebsite = contactDetails.website && contactDetails.website.trim().length > 0;
   const hasContactDetails = hasEmail || hasPhone || hasAddress || hasWebsite;
 
+  // Calculate grid columns based on available sections
+  const hasExams = exams.length > 0;
+  const hasProviders = providers.length > 0;
+  const hasResources = availableResources.length > 0;
+  const hasCompany = availableCompanyPages.length > 0;
+  const hasLegal = availableLegalPages.length > 0;
+  
+  const visibleSections = [hasExams, hasProviders, hasResources, hasCompany, hasLegal, hasContactDetails].filter(Boolean).length;
+  const gridCols = visibleSections <= 2 ? 'md:grid-cols-2' : 
+                   visibleSections <= 3 ? 'md:grid-cols-3' : 
+                   visibleSections <= 4 ? 'md:grid-cols-4' : 
+                   visibleSections <= 5 ? 'md:grid-cols-5' : 'md:grid-cols-6';
+
+
+  // Helper function to get provider URL
+  const getProviderUrl = (provider) => {
+    if (provider.slug) {
+      return `/exams/${provider.slug}`;
+    }
+    if (provider.name) {
+      const slug = provider.name.toLowerCase().replace(/\s+/g, '-');
+      return `/exams/${slug}`;
+    }
+    return "#";
+  };
+
   return (
     <footer className="bg-gradient-to-br from-[#0C1A35] to-[#0E2444] text-white border-t border-[#1A73E8]/20">
       <div className="container mx-auto px-4 py-8 md:py-10">
-        <div className={`grid grid-cols-2 sm:grid-cols-3 ${hasContactDetails ? 'md:grid-cols-6' : 'md:grid-cols-5'} gap-6 md:gap-8 mb-8 md:mb-12`}>
-          <div>
-            <h3 className="font-bold text-base md:text-lg mb-3 md:mb-4 text-[#F5F8FF]">Exams</h3>
-            <ul className="space-y-1.5 md:space-y-2">
-              {footerLinks.exams.map((link, index) => (
-                <li key={index}>
-                  <a href="#" className="text-[#F0F4FF] hover:text-[#1A73E8] transition-colors text-xs md:text-sm">
-                    {link}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
+        <div className={`grid grid-cols-2 sm:grid-cols-3 ${gridCols} gap-6 md:gap-8 mb-8 md:mb-12`}>
+          {/* Exams Section - Only show if exams exist */}
+          {hasExams && (
+            <div>
+              <h3 className="font-bold text-base md:text-lg mb-3 md:mb-4 text-[#F5F8FF]">Exams</h3>
+              <ul className="space-y-1.5 md:space-y-2">
+                {loading ? (
+                  <li className="text-[#F0F4FF] text-xs md:text-sm">Loading...</li>
+                ) : exams.length > 0 ? (
+                  exams.map((exam, index) => (
+                    <li key={index}>
+                      <Link
+                        href={getExamUrl(exam)}
+                        className="text-[#F0F4FF] hover:text-[#1A73E8] transition-colors text-xs md:text-sm"
+                      >
+                        {exam.title}
+                      </Link>
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-[#F0F4FF]/60 text-xs md:text-sm">No exams available</li>
+                )}
+              </ul>
+            </div>
+          )}
 
-          <div>
-            <h3 className="font-bold text-base md:text-lg mb-3 md:mb-4 text-[#F5F8FF]">Providers</h3>
-            <ul className="space-y-1.5 md:space-y-2">
-              {footerLinks.providers.map((link, index) => (
-                <li key={index}>
-                  <a href="#" className="text-[#F0F4FF] hover:text-[#1A73E8] transition-colors text-xs md:text-sm">
-                    {link}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
+          {/* Providers Section - Only show if providers exist */}
+          {hasProviders && (
+            <div>
+              <h3 className="font-bold text-base md:text-lg mb-3 md:mb-4 text-[#F5F8FF]">Providers</h3>
+              <ul className="space-y-1.5 md:space-y-2">
+                {loading ? (
+                  <li className="text-[#F0F4FF] text-xs md:text-sm">Loading...</li>
+                ) : providers.length > 0 ? (
+                  providers.map((provider, index) => (
+                    <li key={index}>
+                      <Link
+                        href={getProviderUrl(provider)}
+                        className="text-[#F0F4FF] hover:text-[#1A73E8] transition-colors text-xs md:text-sm"
+                      >
+                        {provider.name}
+                      </Link>
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-[#F0F4FF]/60 text-xs md:text-sm">No providers available</li>
+                )}
+              </ul>
+            </div>
+          )}
 
-          <div>
-            <h3 className="font-bold text-base md:text-lg mb-3 md:mb-4 text-[#F5F8FF]">Resources</h3>
-            <ul className="space-y-1.5 md:space-y-2">
-              {footerLinks.resources.map((link, index) => (
-                <li key={index}>
-                  {link === "FAQ" ? (
+          {/* Resources Section - Only show if resources exist */}
+          {hasResources && (
+            <div>
+              <h3 className="font-bold text-base md:text-lg mb-3 md:mb-4 text-[#F5F8FF]">Resources</h3>
+              <ul className="space-y-1.5 md:space-y-2">
+                {availableResources.filter(resource => resource.exists).map((resource, index) => (
+                  <li key={index}>
                     <Link
-                      href="/FAQ"
+                      href={resource.href}
                       className="text-[#F0F4FF] hover:text-[#1A73E8] transition-colors text-xs md:text-sm"
                     >
-                      {link}
+                      {resource.name}
                     </Link>
-                  ) : link === "Blog" ? (
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Company Section - Only show if company pages exist */}
+          {hasCompany && (
+            <div>
+              <h3 className="font-bold text-base md:text-lg mb-3 md:mb-4 text-[#F5F8FF]">Company</h3>
+              <ul className="space-y-1.5 md:space-y-2">
+                {availableCompanyPages.map((page, index) => (
+                  <li key={index}>
                     <Link
-                      href="/blog"
+                      href={page.href}
                       className="text-[#F0F4FF] hover:text-[#1A73E8] transition-colors text-xs md:text-sm"
                     >
-                      {link}
+                      {page.name}
                     </Link>
-                  ) : (
-                    <a href="#" className="text-[#F0F4FF] hover:text-[#1A73E8] transition-colors text-xs md:text-sm">
-                      {link}
-                    </a>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
-          <div>
-            <h3 className="font-bold text-base md:text-lg mb-3 md:mb-4 text-[#F5F8FF]">Company</h3>
-            <ul className="space-y-1.5 md:space-y-2">
-              {footerLinks.company.map((link, index) => (
-                <li key={index}>
-                  <a href="#" className="text-[#F0F4FF] hover:text-[#1A73E8] transition-colors text-xs md:text-sm">
-                    {link}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="font-bold text-base md:text-lg mb-3 md:mb-4 text-[#F5F8FF]">Legal</h3>
-            <ul className="space-y-1.5 md:space-y-2">
-              {footerLinks.legal.map((link, index) => (
-                <li key={index}>
-                  <a href="#" className="text-[#F0F4FF] hover:text-[#1A73E8] transition-colors text-xs md:text-sm">
-                    {link}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
+          {/* Legal Section - Only show if legal pages exist */}
+          {hasLegal && (
+            <div>
+              <h3 className="font-bold text-base md:text-lg mb-3 md:mb-4 text-[#F5F8FF]">Legal</h3>
+              <ul className="space-y-1.5 md:space-y-2">
+                {availableLegalPages.map((page, index) => (
+                  <li key={index}>
+                    <Link
+                      href={page.href}
+                      className="text-[#F0F4FF] hover:text-[#1A73E8] transition-colors text-xs md:text-sm"
+                    >
+                      {page.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {/* Contact Us Section */}
           {hasContactDetails && (
@@ -176,7 +286,13 @@ const Footer = () => {
           )}
         </div>
 
-        <div className="border-t border-[#1A73E8]/15 pt-6 md:pt-8 flex flex-col md:flex-row justify-between items-center gap-4 md:gap-0">
+        <div className="border-t border-[#1A73E8]/15 pt-6 md:pt-8 mt-6 md:mt-8">
+          <p className="text-[#E7ECF6]/70 text-[10px] md:text-xs leading-relaxed max-w-4xl mx-auto">
+            <strong className="text-[#F5F8FF]">Disclaimer:</strong> All the course names, logos, and certification titles we use are their respective owners' property. The firm, service, or product names on the website are solely for identification purposes. We do not own, endorse or have the copyright of any brand/logo/name in any manner. Few graphics on our website are freely available on public domains.
+          </p>
+        </div>
+
+        <div className="border-t border-[#1A73E8]/15 pt-6 md:pt-8 mt-6 md:mt-8 flex flex-col md:flex-row justify-between items-center gap-4 md:gap-0">
           <div className="flex items-center gap-2">
             <GraduationCap className="w-5 h-5 md:w-6 md:h-6 text-[#1A73E8]" />
             <span className="font-bold text-base md:text-lg text-[#F5F8FF]">{siteName}</span>

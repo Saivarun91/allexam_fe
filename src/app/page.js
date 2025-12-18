@@ -3,6 +3,7 @@
 import { useEffect, Suspense } from "react";
 import dynamic from "next/dynamic";
 
+
 // Critical above-the-fold component - load immediately
 import HeroSection from "@/components/home/HeroSection";
 

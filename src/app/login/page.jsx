@@ -7,8 +7,8 @@ export default function LoginRedirect() {
   const router = useRouter();
   
   useEffect(() => {
-    // Redirect to auth page with login tab
-    router.replace("/auth?tab=login");
+    // Redirect to login page
+    router.replace("/auth/login");
   }, [router]);
   
   return (

@@ -154,7 +154,7 @@ export default function PaymentSuccessPage() {
             <Button
               size="lg"
               variant="outline"
-              onClick={() => router.push('/Dashboard')}
+              onClick={() => router.push('/dashboard')}
               className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 px-8 py-6 text-lg font-semibold"
             >
               <Trophy className="w-5 h-5 mr-2" />

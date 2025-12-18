@@ -6,15 +6,30 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Award, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { getExamUrl } from "@/lib/utils";
 
 const FeaturedExams = () => {
   const [courses, setCourses] = useState([]);
+  const [sectionSettings, setSectionSettings] = useState({
+    heading: "Featured Exams",
+    subtitle: "",
+  });
   const [currentIndex, setCurrentIndex] = useState(0);
   const carouselRef = useRef(null);
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
   useEffect(() => {
+    // Fetch section settings
+    fetch(`${API_BASE_URL}/api/home/featured-exams-section/`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.data) {
+          setSectionSettings(data.data);
+        }
+      })
+      .catch((err) => console.error("Error fetching section settings:", err));
+    
     // Fetch only featured courses
     fetch(`${API_BASE_URL}/api/courses/featured/`)
       .then((res) => res.json())
@@ -64,9 +79,14 @@ const FeaturedExams = () => {
   return (
     <section id="featured-exams" className="py-12 md:py-20 bg-white">
       <div className="container mx-auto px-4">
-        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-8 md:mb-12 text-[#0C1A35] px-2">
-          Featured Exams
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-3 md:mb-4 text-[#0C1A35] px-2">
+          {sectionSettings.heading || "Featured Exams"}
         </h2>
+        {sectionSettings.subtitle && (
+          <p className="text-center text-[#0C1A35]/70 text-sm sm:text-base md:text-lg mb-8 md:mb-12 max-w-2xl mx-auto px-2">
+            {sectionSettings.subtitle}
+          </p>
+        )}
 
         {courses.length === 0 && (
           <p className="text-center text-[#0C1A35]/60">No featured exams available.</p>
@@ -178,7 +198,7 @@ const FeaturedExams = () => {
                           className="w-full bg-[#1A73E8] text-white hover:bg-[#1557B0] group-hover:shadow-[0_4px_14px_rgba(26,115,232,0.4)] transition-all"
                           asChild
                         >
-                          <Link href={`/exam-details/${exam.slug || '#'}`}>
+                          <Link href={getExamUrl(exam)}>
                             Start Practicing
                             <ArrowRight className="ml-2 w-4 h-4" />
                           </Link>

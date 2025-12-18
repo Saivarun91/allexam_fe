@@ -21,7 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Edit, Trash2, Eye, FileText, Image as ImageIcon } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, FileText, Image as ImageIcon, Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 
@@ -46,14 +46,65 @@ export default function BlogPostsAdmin() {
     slug: "",
     is_featured: false,
     is_active: true,
-    meta_title: "",
-    meta_keywords: "",
-    meta_description: "",
+  });
+  
+  const [sectionSettings, setSectionSettings] = useState({
+    heading: "Latest Blog Posts",
+    subtitle: "Stay updated with certification tips and news",
   });
   
   useEffect(() => {
     fetchPosts();
+    fetchSectionSettings();
   }, []);
+  
+  const fetchSectionSettings = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/home/admin/blog-posts-section/`, {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        }
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.data) {
+          setSectionSettings(data.data);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching section settings:", error);
+    }
+  };
+  
+  const handleSectionSettingsUpdate = async () => {
+    setLoading(true);
+    setMessage("");
+    
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/home/admin/blog-posts-section/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        },
+        body: JSON.stringify(sectionSettings),
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        setMessage("✅ Section settings updated successfully!");
+        setTimeout(() => setMessage(""), 3000);
+      } else {
+        setMessage("❌ Error: " + (data.error || "Failed to save"));
+      }
+    } catch (err) {
+      setMessage("❌ Error: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
   
     // Cloudinary
     const CLOUD_NAME = "dhy0krkef";
@@ -121,9 +172,6 @@ export default function BlogPostsAdmin() {
       slug: "",
       is_featured: false,
       is_active: true,
-      meta_title: "",
-      meta_keywords: "",
-      meta_description: "",
     });
     setEditing(null);
   };
@@ -141,9 +189,6 @@ export default function BlogPostsAdmin() {
       slug: post.slug || "",
       is_featured: post.is_featured || false,
       is_active: post.is_active !== undefined ? post.is_active : true,
-      meta_title: post.meta_title || "",
-      meta_keywords: post.meta_keywords || "",
-      meta_description: post.meta_description || "",
     });
     setDialogOpen(true);
   };
@@ -173,9 +218,6 @@ export default function BlogPostsAdmin() {
       slug: slug,
       is_featured: formData.is_featured,
       is_active: formData.is_active,
-      meta_title: formData.meta_title,
-      meta_keywords: formData.meta_keywords,
-      meta_description: formData.meta_description,
     };
     
     try {
@@ -403,51 +445,6 @@ export default function BlogPostsAdmin() {
                   </CardContent>
                 </Card>
                 
-                {/* SEO Fields */}
-                <Card className="border-[#D3E3FF]">
-                  <CardHeader className="bg-gradient-to-r from-purple-500/5 to-purple-500/10">
-                    <CardTitle className="text-lg">SEO Meta Information</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4 pt-6">
-                    <div>
-                      <Label htmlFor="meta_title">Meta Title</Label>
-                      <Input
-                        id="meta_title"
-                        value={formData.meta_title}
-                        onChange={(e) => setFormData({...formData, meta_title: e.target.value})}
-                        placeholder="AWS SAA-C03 Study Guide - Pass in 30 Days"
-                        className="mt-2 border-[#D3E3FF]"
-                      />
-                      <p className="text-sm text-gray-500 mt-1">Title shown in search results (defaults to blog title)</p>
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="meta_keywords">Meta Keywords</Label>
-                      <Input
-                        id="meta_keywords"
-                        value={formData.meta_keywords}
-                        onChange={(e) => setFormData({...formData, meta_keywords: e.target.value})}
-                        placeholder="AWS, SAA-C03, certification, study guide, exam prep"
-                        className="mt-2 border-[#D3E3FF]"
-                      />
-                      <p className="text-sm text-gray-500 mt-1">Comma-separated keywords for SEO</p>
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="meta_description">Meta Description</Label>
-                      <Textarea
-                        id="meta_description"
-                        value={formData.meta_description}
-                        onChange={(e) => setFormData({...formData, meta_description: e.target.value})}
-                        placeholder="Complete guide to passing AWS Solutions Architect exam in 30 days with practice questions and study tips."
-                        rows={3}
-                        className="mt-2 border-[#D3E3FF]"
-                      />
-                      <p className="text-sm text-gray-500 mt-1">Description shown in search results (defaults to excerpt)</p>
-                    </div>
-                  </CardContent>
-                </Card>
-                
                 {/* Live Preview */}
                 <Card className="border-[#D3E3FF]">
                   <CardHeader className="bg-gradient-to-r from-[#10B981]/5 to-[#10B981]/10">
@@ -459,12 +456,11 @@ export default function BlogPostsAdmin() {
                   <CardContent className="pt-6">
                     <div className="border border-[#D3E3FF] rounded-lg overflow-hidden bg-white hover:shadow-lg transition-shadow">
                       {formData.image_url ? (
-                        <div className="h-48 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center relative">
-                          <ImageIcon className="w-12 h-12 text-gray-400" />
-                          <div className="absolute inset-0 bg-black/5 flex items-center justify-center">
-                            <p className="text-sm text-gray-600 bg-white/90 px-3 py-1 rounded">Image Preview</p>
-                          </div>
-                        </div>
+                        <img 
+                          src={formData.image_url} 
+                          alt="Blog preview" 
+                          className="w-full h-48 object-cover"
+                        />
                       ) : (
                         <div className="h-48 bg-gray-100 flex items-center justify-center">
                           <p className="text-gray-400">No image URL provided</p>
@@ -542,6 +538,46 @@ export default function BlogPostsAdmin() {
           {message}
         </motion.div>
       )}
+
+      {/* Section Settings */}
+      <Card className="mb-6">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Settings className="w-5 h-5 text-[#1A73E8]" />
+              <CardTitle>Section Settings</CardTitle>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <Label>Section Heading</Label>
+              <Input
+                value={sectionSettings.heading}
+                onChange={(e) => setSectionSettings({...sectionSettings, heading: e.target.value})}
+                placeholder="Latest Blog Posts"
+              />
+            </div>
+            <div>
+              <Label>Section Subtitle</Label>
+              <Input
+                value={sectionSettings.subtitle}
+                onChange={(e) => setSectionSettings({...sectionSettings, subtitle: e.target.value})}
+                placeholder="Stay updated with certification tips and news"
+              />
+            </div>
+          </div>
+          
+          <Button 
+            onClick={handleSectionSettingsUpdate} 
+            disabled={loading}
+            className="bg-[#1A73E8] hover:bg-[#1557B0]"
+          >
+            {loading ? "Saving..." : "Save Section Settings"}
+          </Button>
+        </CardContent>
+      </Card>
       
       {/* Blog Posts Table */}
       <Card className="border-[#D3E3FF]">
@@ -642,6 +678,14 @@ export default function BlogPostsAdmin() {
             <CardTitle>Homepage Preview - Featured Blog Posts</CardTitle>
           </CardHeader>
           <CardContent className="pt-6">
+            <div className="mb-6">
+              <h2 className="text-3xl font-bold text-center mb-3 text-[#0C1A35]">
+                {sectionSettings.heading || "Latest Blog Posts"}
+              </h2>
+              <p className="text-center text-[#0C1A35]/70 text-lg mb-8 max-w-2xl mx-auto">
+                {sectionSettings.subtitle || "Stay updated with certification tips and news"}
+              </p>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {posts.filter(p => p.is_featured && p.is_active).slice(0, 3).map((post) => (
                 <div key={post.id} className="border border-[#D3E3FF] rounded-lg overflow-hidden bg-white hover:shadow-lg transition-shadow">

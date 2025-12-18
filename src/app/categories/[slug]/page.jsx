@@ -7,6 +7,7 @@ import { ArrowRight, Award, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { getExamUrl } from "@/lib/utils";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -139,7 +140,9 @@ export default function CategoryPage() {
               <Card
                 key={course.id}
                 className="hover:shadow-lg hover:-translate-y-1 transition-all border-[#DDE7FF] cursor-pointer"
-                onClick={() => window.location.href = `/exam-details/${course.slug}`}
+                onClick={() => {
+                  window.location.href = getExamUrl(course);
+                }}
               >
                 <CardContent className="p-6 space-y-4">
                   {/* Icon + Badge */}
@@ -178,7 +181,7 @@ export default function CategoryPage() {
                     asChild
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <Link href={`/exam-details/${course.slug}`}>
+                    <Link href={getExamUrl(course)}>
                       Start Practicing
                       <ArrowRight className="ml-2 w-4 h-4" />
                     </Link>

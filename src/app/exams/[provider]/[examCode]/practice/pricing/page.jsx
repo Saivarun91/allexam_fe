@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import PricingJsonLd from "@/components/PricingJsonLd";
 import {
   CheckCircle2, Clock, BookOpen, RefreshCw, BarChart3, Target, TrendingUp, Bell,
   ArrowRight, Check, X, Star
@@ -89,6 +90,19 @@ export default function PricingPage() {
         
         setPricingData(data);
         setLoading(false);
+
+        // Set canonical URL
+        if (typeof window !== "undefined") {
+          const currentPath = window.location.pathname;
+          const canonicalUrl = `https://allexamquestions.com${currentPath}`;
+          let canonicalLink = document.querySelector('link[rel="canonical"]');
+          if (!canonicalLink) {
+            canonicalLink = document.createElement("link");
+            canonicalLink.setAttribute("rel", "canonical");
+            document.head.appendChild(canonicalLink);
+          }
+          canonicalLink.setAttribute("href", canonicalUrl);
+        }
       } catch (err) {
         console.error("Error fetching pricing:", err);
         
@@ -175,6 +189,13 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#F5F8FC] to-white">
+      {pricingData && (
+        <PricingJsonLd
+          pricingData={pricingData}
+          courseTitle={course_title}
+          courseCode={course_code}
+        />
+      )}
       <main className="flex-1">
         {/* Hero Section */}
         <section className="py-16 px-4 bg-gradient-to-br from-[#1A73E8]/5 via-[#F5F8FF] to-white">

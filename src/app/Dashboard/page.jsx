@@ -29,7 +29,7 @@
 //         setDashboardData(data);
 //         setLoading(false);
 //       } else if (res.status === 401) {
-//         router.push("/auth?redirect=/Dashboard");
+//         router.push("/auth?redirect=/dashboard");
 //         return;
 //       } else {
 //         throw new Error("Failed to fetch dashboard data");
@@ -1246,7 +1246,7 @@ export default function Dashboard() {
                 {/* Used/Not Available Coupons Section */}
                 {coupons.filter(c => c.is_used).length > 0 && (
                   <div>
-                    <h3 className="text-lg font-semibold mb-4 text-gray-600">Used Coupons (Not Available)</h3>
+                    <h3 className="text-lg font-semibold mb-4 text-gray-600">Already Used</h3>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {coupons.filter(c => c.is_used).map((coupon) => (
                         <div 
