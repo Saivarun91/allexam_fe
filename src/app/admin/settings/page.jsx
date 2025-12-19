@@ -8,10 +8,14 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import axios from "axios";
 import { toast } from "sonner"; // toast notifications
+import { Eye, EyeOff } from "lucide-react";
 
 export default function AdminSettingsPage() {
   const [siteName, setSiteName] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
+  const [logoPreview, setLogoPreview] = useState("");
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [emailNotifications, setEmailNotifications] = useState(false);
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [defaultUserRole, setDefaultUserRole] = useState("user");
@@ -25,11 +29,15 @@ export default function AdminSettingsPage() {
 
   // Admin credentials change states
   const [currentAdminEmail, setCurrentAdminEmail] = useState("");
-  const [newAdminEmail, setNewAdminEmail] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isUpdatingCredentials, setIsUpdatingCredentials] = useState(false);
+  
+  // Password visibility states
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // ✅ Fetch settings and admin profile on load
   useEffect(() => {
@@ -46,6 +54,8 @@ export default function AdminSettingsPage() {
           const d = res.data.data;
           setSiteName(d.site_name || "");
           setAdminEmail(d.admin_email || "");
+          setLogoUrl(d.logo_url || "");
+          setLogoPreview(d.logo_url || "");
           setEmailNotifications(d.email_notifications || false);
           setMaintenanceMode(d.maintenance_mode || false);
           setDefaultUserRole(d.default_user_role || "user");
@@ -61,8 +71,105 @@ export default function AdminSettingsPage() {
       }
     };
 
+    const fetchAdminProfile = async () => {
+      try {
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
+        const res = await axios.get(`${API_BASE_URL}/api/users/admin/profile/`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+
+        if (res.data.admin) {
+          setCurrentAdminEmail(res.data.admin.email || "");
+          // Update localStorage with current email
+          localStorage.setItem("user_email", res.data.admin.email || "");
+          localStorage.setItem("user_name", res.data.admin.name || "Admin");
+        }
+      } catch (err) {
+        console.error("Error fetching admin profile:", err);
+        // Fallback to localStorage if API fails
+        const storedEmail = localStorage.getItem("user_email");
+        if (storedEmail) {
+          setCurrentAdminEmail(storedEmail);
+        }
+      }
+    };
+
     fetchSettings();
+    fetchAdminProfile();
   }, []);
+
+  // Cloudinary constants
+  const CLOUD_NAME = "dhy0krkef";
+  const UPLOAD_PRESET = "preptara";
+
+  // Handle logo upload
+  const handleLogoChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("❌ Please upload an image file");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("❌ Image size should be less than 5MB");
+      return;
+    }
+
+    setUploadingLogo(true);
+
+    // Create preview immediately
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setLogoPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+
+    // Upload to Cloudinary
+    const imageData = new FormData();
+    imageData.append("file", file);
+    imageData.append("upload_preset", UPLOAD_PRESET);
+
+    try {
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+        method: "POST",
+        body: imageData,
+      });
+
+      const data = await res.json();
+      if (data.secure_url) {
+        setLogoUrl(data.secure_url);
+        setLogoPreview(data.secure_url);
+        toast.success("✅ Logo uploaded successfully!");
+      } else {
+        toast.error("❌ Logo upload failed!");
+        setLogoPreview(logoUrl);
+      }
+    } catch (err) {
+      console.error("Cloudinary Upload Error:", err);
+      toast.error("❌ Logo upload failed!");
+      setLogoPreview(logoUrl);
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
+  // Handle logo removal
+  const handleRemoveLogo = () => {
+    setLogoUrl("");
+    setLogoPreview("");
+    // Clear the file input
+    const fileInput = document.getElementById('logo-upload');
+    if (fileInput) {
+      fileInput.value = '';
+    }
+    toast.success("✅ Logo removed");
+  };
 
   // ✅ Common reusable function to update settings
   const updateSettings = async (updatedFields, successMessage) => {
@@ -70,6 +177,7 @@ export default function AdminSettingsPage() {
       const payload = {
         site_name: siteName,
         admin_email: adminEmail,
+        logo_url: logoUrl,
         email_notifications: emailNotifications,
         maintenance_mode: maintenanceMode,
         default_user_role: defaultUserRole,
@@ -148,11 +256,51 @@ export default function AdminSettingsPage() {
             />
           </div>
 
+          <div className="flex flex-col md:flex-row md:items-start gap-4">
+            <label className="w-40 font-medium text-gray-700 pt-2">Logo:</label>
+            <div className="flex-1 flex flex-col gap-3">
+              {logoPreview && (
+                <div className="relative inline-block">
+                  <img
+                    src={logoPreview}
+                    alt="Logo preview"
+                    className="h-20 w-auto object-contain border border-gray-300 rounded-lg p-2 bg-gray-50"
+                  />
+                </div>
+              )}
+              <div className="flex gap-2 items-center">
+                <Input
+                  id="logo-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoChange}
+                  disabled={uploadingLogo}
+                  className="flex-1"
+                />
+                {logoPreview && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleRemoveLogo}
+                    disabled={uploadingLogo}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    Remove
+                  </Button>
+                )}
+              </div>
+              {uploadingLogo && (
+                <p className="text-sm text-gray-500">Uploading logo...</p>
+              )}
+              <p className="text-xs text-gray-500">Upload a logo image (max 5MB, recommended: PNG or JPG)</p>
+            </div>
+          </div>
+
           <Button
             className="w-fit mt-2"
             onClick={() =>
               updateSettings(
-                { site_name: siteName, admin_email: adminEmail },
+                { site_name: siteName, admin_email: adminEmail, logo_url: logoUrl },
                 "✅ General settings saved successfully!"
               )
             }
@@ -271,44 +419,103 @@ export default function AdminSettingsPage() {
         <CardContent className="flex flex-col gap-4">
           <div className="flex flex-col gap-4">
             <div>
-              <label className="block font-medium text-gray-700 mb-2">New Email Address</label>
+              <label className="block font-medium text-gray-700 mb-2">
+                Current Email Address
+                <span className="text-gray-400 text-sm font-normal ml-1">(Display only)</span>
+              </label>
               <Input
                 type="email"
-                value={newAdminEmail}
-                onChange={(e) => setNewAdminEmail(e.target.value)}
-                placeholder="Enter new email address"
+                value={currentAdminEmail}
+                readOnly
+                className="bg-gray-100 cursor-not-allowed"
+                placeholder="Current email address"
               />
             </div>
 
             <div>
-              <label className="block font-medium text-gray-700 mb-2">Current Password</label>
-              <Input
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                placeholder="Enter current password (required for password change)"
-              />
+              <label className="block font-medium text-gray-700 mb-2">
+                Current Password
+                {newPassword && <span className="text-red-500 ml-1">*</span>}
+                {!newPassword && <span className="text-gray-400 text-sm font-normal ml-1">(Required only if changing password)</span>}
+              </label>
+              <div className="relative">
+                <Input
+                  type={showCurrentPassword ? "text" : "password"}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Enter current password (required for password change)"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                  aria-label="Toggle password visibility"
+                >
+                  {showCurrentPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
             </div>
 
             <div>
-              <label className="block font-medium text-gray-700 mb-2">New Password</label>
-              <Input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Enter new password (leave empty to keep current)"
-              />
+              <label className="block font-medium text-gray-700 mb-2">
+                New Password
+                <span className="text-gray-400 text-sm font-normal ml-1">(Optional - leave empty to keep current)</span>
+              </label>
+              <div className="relative">
+                <Input
+                  type={showNewPassword ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password (leave empty to keep current)"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                  aria-label="Toggle password visibility"
+                >
+                  {showNewPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
             </div>
 
             {newPassword && (
               <div>
-                <label className="block font-medium text-gray-700 mb-2">Confirm New Password</label>
-                <Input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirm new password"
-                />
+                <label className="block font-medium text-gray-700 mb-2">
+                  Confirm New Password
+                  <span className="text-red-500 ml-1">*</span>
+                </label>
+                <div className="relative">
+                  <Input
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm new password"
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                    aria-label="Toggle password visibility"
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
+                  </button>
+                </div>
               </div>
             )}
 
@@ -331,17 +538,14 @@ export default function AdminSettingsPage() {
                   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
                   const payload = {};
 
-                  if (newAdminEmail && newAdminEmail !== currentAdminEmail) {
-                    payload.email = newAdminEmail;
-                  }
-
+                  // Only update password if provided
                   if (newPassword) {
                     payload.password = newPassword;
                     payload.current_password = currentPassword;
                   }
 
                   if (Object.keys(payload).length === 0) {
-                    toast.error("❌ Please enter new email or password to update");
+                    toast.error("❌ Please enter a new password to update");
                     setIsUpdatingCredentials(false);
                     return;
                   }
@@ -359,15 +563,31 @@ export default function AdminSettingsPage() {
 
                   if (res.data.message) {
                     toast.success("✅ Credentials updated successfully!");
-                    setCurrentAdminEmail(res.data.admin?.email || newAdminEmail);
-                    setNewAdminEmail(res.data.admin?.email || newAdminEmail);
+                    // Fetch updated admin profile
+                    const profileRes = await axios.get(
+                      `${API_BASE_URL}/api/users/admin/profile/`,
+                      {
+                        headers: {
+                          Authorization: `Bearer ${localStorage.getItem("token")}`,
+                        },
+                      }
+                    );
+                    if (profileRes.data.admin) {
+                      setCurrentAdminEmail(profileRes.data.admin.email || "");
+                      localStorage.setItem("user_email", profileRes.data.admin.email || "");
+                      localStorage.setItem("user_name", profileRes.data.admin.name || "Admin");
+                      // Update stored password if new password was set
+                      if (newPassword) {
+                        localStorage.setItem("admin_password", newPassword);
+                      }
+                      // Trigger custom event for navbar update
+                      window.dispatchEvent(new CustomEvent("adminProfileUpdated"));
+                      // Also trigger storage event for cross-tab updates
+                      window.dispatchEvent(new Event("storage"));
+                    }
                     setCurrentPassword("");
                     setNewPassword("");
                     setConfirmPassword("");
-
-                    if (res.data.admin?.email) {
-                      localStorage.setItem("user_name", res.data.admin.name || "Admin");
-                    }
                   } else {
                     toast.error(res.data.error || "❌ Failed to update credentials");
                   }

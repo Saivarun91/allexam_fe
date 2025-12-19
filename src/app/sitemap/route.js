@@ -5,6 +5,9 @@
  * For /sitemap.xml access, use Next.js rewrite or access via /sitemap
  */
 
+// Mark route as dynamic to prevent static generation errors during build
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
