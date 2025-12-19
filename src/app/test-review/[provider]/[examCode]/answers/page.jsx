@@ -299,14 +299,27 @@ export default function ReviewAnswersPage() {
                       }
                     
                     // Determine styling
+                    // Priority: Show correct answers in green, wrong user answers in red
                     let bgColor = 'bg-white';
                     let borderColor = 'border-gray-200';
                     let textColor = 'text-[#0C1A35]';
                     let labelColor = 'text-[#0C1A35]';
                     let badge = null;
                     
-                    if (isCorrectAnswer) {
-                      // Correct answer - always green
+                    if (isCorrectAnswer && isUserAnswer) {
+                      // User's correct answer - green with checkmark
+                      bgColor = 'bg-green-50';
+                      borderColor = 'border-green-500';
+                      textColor = 'text-green-900';
+                      labelColor = 'text-green-700';
+                      badge = (
+                        <Badge className="bg-green-100 text-green-700 border-green-300">
+                          <CheckCircle className="w-3 h-3 mr-1" />
+                          Your Answer ✓ (Correct)
+                        </Badge>
+                      );
+                    } else if (isCorrectAnswer) {
+                      // Correct answer (not selected by user) - always green
                       bgColor = 'bg-green-50';
                       borderColor = 'border-green-500';
                       textColor = 'text-green-900';
@@ -327,18 +340,6 @@ export default function ReviewAnswersPage() {
                         <Badge className="bg-red-100 text-red-700 border-red-300">
                           <XCircle className="w-3 h-3 mr-1" />
                           Your Answer (Wrong)
-                        </Badge>
-                      );
-                    } else if (isUserAnswer && isCorrectAnswer) {
-                      // User's correct answer - green with checkmark
-                      bgColor = 'bg-green-50';
-                      borderColor = 'border-green-500';
-                      textColor = 'text-green-900';
-                      labelColor = 'text-green-700';
-                      badge = (
-                        <Badge className="bg-green-100 text-green-700 border-green-300">
-                          <CheckCircle className="w-3 h-3 mr-1" />
-                          Your Answer ✓ (Correct)
                         </Badge>
                       );
                     }

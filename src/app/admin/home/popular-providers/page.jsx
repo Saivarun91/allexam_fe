@@ -473,7 +473,11 @@ export default function PopularProvidersAdmin() {
                         <img 
                           src={logoPreview} 
                           alt="Logo preview" 
+                          width={96}
+                          height={96}
                           className="w-24 h-24 object-contain border border-gray-200 rounded-lg p-2 bg-white"
+                          loading="lazy"
+                          sizes="96px"
                         />
                         {formData.logo_url && (
                           <p className="text-xs text-gray-500 mt-1">Cloudinary URL: {formData.logo_url.substring(0, 50)}...</p>
@@ -670,7 +674,11 @@ export default function PopularProvidersAdmin() {
                         <img 
                           src={provider.logo_url} 
                           alt={provider.name}
+                          width={48}
+                          height={48}
                           className="w-12 h-12 object-contain border border-gray-200 rounded p-1 bg-white"
+                          loading="lazy"
+                          sizes="48px"
                           onError={(e) => {
                             e.target.style.display = 'none';
                             e.target.nextSibling.style.display = 'inline';
@@ -739,7 +747,11 @@ export default function PopularProvidersAdmin() {
                     <img 
                       src={provider.logo_url} 
                       alt={provider.name}
+                      width={64}
+                      height={64}
                       className="w-16 h-16 object-contain"
+                      loading="lazy"
+                      sizes="64px"
                       onError={(e) => {
                         // Fallback to icon if logo fails to load
                         e.target.style.display = 'none';

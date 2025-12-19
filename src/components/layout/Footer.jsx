@@ -3,8 +3,10 @@
 import { GraduationCap, Facebook, Twitter, Linkedin, Youtube, Shield, Mail, Phone, MapPin, Globe } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { useSiteName } from "@/hooks/useSiteName";
 import { useContactDetails } from "@/hooks/useContactDetails";
+import { useLogoUrl } from "@/hooks/useLogoUrl";
 import { getExamUrl } from "@/lib/utils";
 
 /**
@@ -17,8 +19,15 @@ import { getExamUrl } from "@/lib/utils";
  * This footer dynamically fetches data from the API and only shows what exists in the website.
  */
 const Footer = () => {
+  const pathname = usePathname();
   const siteName = useSiteName();
   const contactDetails = useContactDetails();
+  const logoUrl = useLogoUrl();
+
+  // Don't show footer on admin routes
+  if (pathname?.startsWith("/admin")) {
+    return null;
+  }
   const [providers, setProviders] = useState([]);
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -294,8 +303,22 @@ const Footer = () => {
 
         <div className="border-t border-[#1A73E8]/15 pt-6 md:pt-8 mt-6 md:mt-8 flex flex-col md:flex-row justify-between items-center gap-4 md:gap-0">
           <div className="flex items-center gap-2">
+            {logoUrl ? (
+              <img 
+                src={logoUrl} 
+                alt={siteName || "Logo"} 
+                width={100}
+                height={24}
+                className="h-6 w-auto max-w-[100px] object-contain"
+                loading="lazy"
+                sizes="(max-width: 768px) 80px, 100px"
+              />
+            ) : (
             <GraduationCap className="w-5 h-5 md:w-6 md:h-6 text-[#1A73E8]" />
+            )}
+            {siteName && siteName.trim() && (
             <span className="font-bold text-base md:text-lg text-[#F5F8FF]">{siteName}</span>
+            )}
           </div>
 
           <div className="flex items-center gap-4 md:gap-6">
@@ -325,7 +348,7 @@ const Footer = () => {
         </div>
 
         <div className="text-center text-[#E7ECF6]/60 text-xs md:text-sm mt-6 md:mt-8 space-y-1 md:space-y-2">
-          <p>© 2025 {siteName}. All rights reserved.</p>
+          <p>© 2025 {siteName && siteName.trim() ? siteName : "AllExamQuestions"}. All rights reserved.</p>
           <p className="text-[10px] md:text-xs text-[#E7ECF6]/50">
             A Brand of TutorKhoj Private Limited
           </p>

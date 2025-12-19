@@ -199,7 +199,11 @@ export default function ProfilePage() {
                   <img
                     src={previewImage}
                     alt="Profile"
+                    width={128}
+                    height={128}
                     className="w-32 h-32 rounded-full object-cover border-4 border-[#1A73E8]"
+                    loading="lazy"
+                    sizes="128px"
                   />
                 ) : (
                   <div className="w-32 h-32 rounded-full bg-gradient-to-br from-[#1A73E8] to-[#4A90E2] flex items-center justify-center text-white text-4xl font-bold border-4 border-[#1A73E8]">

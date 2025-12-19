@@ -158,12 +158,16 @@ const BlogSection = () => {
                       >
                         {/* Blog Image */}
                         {article.image_url ? (
-                          <div className="relative h-48 overflow-hidden">
+                          <div className="relative w-full aspect-[16/9] overflow-hidden">
                             <img
                               src={article.image_url}
                               alt={article.meta_title || article.title}
                               title={article.meta_title || article.title}
+                              width={400}
+                              height={225}
                               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                              loading="lazy"
+                              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px"
                               onError={(e) => {
                                 e.target.src = 'https://via.placeholder.com/400x300/1A73E8/ffffff?text=Blog+Post';
                               }}
@@ -177,7 +181,7 @@ const BlogSection = () => {
                             )}
                           </div>
                         ) : (
-                          <div className="h-48 bg-gradient-to-br from-[#1A73E8]/10 to-purple-500/10 flex items-center justify-center">
+                          <div className="w-full aspect-[16/9] bg-gradient-to-br from-[#1A73E8]/10 to-purple-500/10 flex items-center justify-center">
                             <span className="text-[#0C1A35]/30 text-sm">No image</span>
                           </div>
                         )}

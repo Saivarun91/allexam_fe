@@ -10,6 +10,15 @@ const nextConfig = {
       },
     ];
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com', // Allow Cloudinary images
+        pathname: '/**', // Allow all paths from Cloudinary
+      },
+    ],
+  },
 };
 
 export default nextConfig;

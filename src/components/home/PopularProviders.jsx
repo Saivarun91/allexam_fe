@@ -187,8 +187,12 @@ export default function PopularProviders() {
                         <img 
                           src={provider.logo_url} 
                           alt={provider.name}
+                          width={logoSize}
+                          height={logoSize}
                           className="object-contain"
                           style={{ maxWidth: `${logoSize}px`, maxHeight: `${logoSize}px` }}
+                          loading="lazy"
+                          sizes={`${logoSize}px`}
                           onError={(e) => {
                             // Fallback to icon if logo fails to load
                             e.target.style.display = 'none';

@@ -10,7 +10,7 @@ let cacheTimestamp = 0;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 export function useSiteName() {
-  const [siteName, setSiteName] = useState("AllExamQuestions"); // Default fallback
+  const [siteName, setSiteName] = useState(""); // Start with empty string
 
   useEffect(() => {
     const fetchSiteName = async () => {
@@ -20,22 +20,33 @@ export function useSiteName() {
 
         if (res.ok) {
           const data = await res.json();
-          if (data.success && data.site_name) {
-            const name = data.site_name;
+          if (data.success) {
+            // Use site_name if it exists and is not empty, otherwise use empty string
+            const name = (data.site_name && data.site_name.trim()) ? data.site_name.trim() : "";
             cachedSiteName = name;
             cacheTimestamp = Date.now();
             setSiteName(name);
+          } else {
+            // If API call failed, set to empty string
+            cachedSiteName = "";
+            setSiteName("");
           }
+        } else {
+          // If response not ok, set to empty string
+          cachedSiteName = "";
+          setSiteName("");
         }
       } catch (err) {
         console.error("Error fetching site name:", err);
-        // Keep default fallback
+        // Keep empty string on error
+        cachedSiteName = "";
+        setSiteName("");
       }
     };
 
     // Check cache first
     const now = Date.now();
-    if (cachedSiteName && (now - cacheTimestamp) < CACHE_DURATION) {
+    if (cachedSiteName !== null && (now - cacheTimestamp) < CACHE_DURATION) {
       setSiteName(cachedSiteName);
     } else {
       fetchSiteName();
@@ -58,8 +69,8 @@ export function useSiteName() {
   return siteName;
 }
 
-// Helper to get site name synchronously (returns cached value or default)
+// Helper to get site name synchronously (returns cached value or empty string)
 export function getSiteName() {
-  return cachedSiteName || "AllExamQuestions";
+  return cachedSiteName || "";
 }
 

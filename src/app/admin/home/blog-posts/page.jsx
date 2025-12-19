@@ -420,11 +420,17 @@ export default function BlogPostsAdmin() {
                       {uploading && <p className="text-sm text-blue-500 mt-1">Uploading image...</p>}
                       {formData.image_url && (
                         <div className="mt-3">
-                          <img 
-                            src={formData.image_url} 
-                            alt="Featured image preview" 
-                            className="w-full h-48 object-cover rounded-md border border-[#D3E3FF]"
-                          />
+                          <div className="w-full aspect-[16/9] rounded-md overflow-hidden border border-[#D3E3FF]">
+                            <img 
+                              src={formData.image_url} 
+                              alt="Featured image preview" 
+                              width={600}
+                              height={338}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                              sizes="(max-width: 768px) 100vw, 600px"
+                            />
+                          </div>
                           <p className="text-xs text-gray-500 mt-1">Uploaded image URL: {formData.image_url}</p>
                         </div>
                       )}
@@ -456,13 +462,19 @@ export default function BlogPostsAdmin() {
                   <CardContent className="pt-6">
                     <div className="border border-[#D3E3FF] rounded-lg overflow-hidden bg-white hover:shadow-lg transition-shadow">
                       {formData.image_url ? (
-                        <img 
-                          src={formData.image_url} 
-                          alt="Blog preview" 
-                          className="w-full h-48 object-cover"
-                        />
+                        <div className="w-full aspect-[16/9] overflow-hidden">
+                          <img 
+                            src={formData.image_url} 
+                            alt="Blog preview" 
+                            width={600}
+                            height={338}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                            sizes="(max-width: 768px) 100vw, 600px"
+                          />
+                        </div>
                       ) : (
-                        <div className="h-48 bg-gray-100 flex items-center justify-center">
+                        <div className="w-full aspect-[16/9] bg-gray-100 flex items-center justify-center">
                           <p className="text-gray-400">No image URL provided</p>
                         </div>
                       )}
@@ -689,7 +701,7 @@ export default function BlogPostsAdmin() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {posts.filter(p => p.is_featured && p.is_active).slice(0, 3).map((post) => (
                 <div key={post.id} className="border border-[#D3E3FF] rounded-lg overflow-hidden bg-white hover:shadow-lg transition-shadow">
-                  <div className="h-48 bg-gradient-to-br from-[#1A73E8]/10 to-purple-500/10 flex items-center justify-center">
+                  <div className="w-full aspect-[16/9] bg-gradient-to-br from-[#1A73E8]/10 to-purple-500/10 flex items-center justify-center">
                     <FileText className="w-12 h-12 text-[#1A73E8]/30" />
                   </div>
                   <div className="p-4">

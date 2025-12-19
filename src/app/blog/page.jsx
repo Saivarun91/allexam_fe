@@ -98,11 +98,15 @@ export default function BlogPage() {
                   <Link key={article.id} href={blogUrl} className="block group">
                     <Card className="overflow-hidden hover:shadow-[0_6px_20px_rgba(26,115,232,0.15)] hover:-translate-y-1 transition-all duration-300 border-[#DDE7FF] cursor-pointer bg-white shadow-[0_2px_8px_rgba(26,115,232,0.08)] h-full flex flex-col">
                       {article.image_url ? (
-                        <div className="relative h-48 overflow-hidden">
+                        <div className="relative w-full aspect-[16/9] overflow-hidden">
                 <img
                             src={article.image_url}
                   alt={article.title}
+                            width={400}
+                            height={225}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            loading="lazy"
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px"
                             onError={(e) => {
                               e.target.src = 'https://via.placeholder.com/400x300/1A73E8/ffffff?text=Blog+Post';
                             }}
@@ -116,7 +120,7 @@ export default function BlogPage() {
                           )}
                         </div>
                       ) : (
-                        <div className="h-48 bg-gradient-to-br from-[#1A73E8]/10 to-purple-500/10 flex items-center justify-center">
+                        <div className="w-full aspect-[16/9] bg-gradient-to-br from-[#1A73E8]/10 to-purple-500/10 flex items-center justify-center">
                           <span className="text-[#0C1A35]/30 text-sm">No image</span>
                         </div>
                       )}

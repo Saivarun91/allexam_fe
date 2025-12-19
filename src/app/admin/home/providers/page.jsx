@@ -327,7 +327,11 @@ export default function AdminProvidersPage() {
                               <img 
                                 src={provider.logo_url} 
                                 alt={provider.name}
+                                width={32}
+                                height={32}
                                 className="w-8 h-8 object-contain rounded"
+                                loading="lazy"
+                                sizes="32px"
                               />
                             )}
                             <span className="font-medium text-gray-900">{provider.name}</span>

@@ -157,11 +157,15 @@ export default function BlogDetailPage() {
           </div>
 
           {blog.image_url && (
-            <div className="relative w-full h-96 mb-8 rounded-lg overflow-hidden">
+            <div className="relative w-full aspect-[16/9] mb-8 rounded-lg overflow-hidden">
               <img
                 src={blog.image_url}
                 alt={blog.title}
+                width={1200}
+                height={675}
                 className="w-full h-full object-cover"
+                loading="lazy"
+                sizes="(max-width: 768px) 100vw, 1200px"
                 onError={(e) => {
                   e.target.src = 'https://via.placeholder.com/800x400/1A73E8/ffffff?text=Blog+Post';
                 }}

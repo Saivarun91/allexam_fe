@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import axios from "axios";
-import { toast } from "sonner"; // toast notifications
+import toast from "react-hot-toast"; // toast notifications
 import { Eye, EyeOff } from "lucide-react";
 
 export default function AdminSettingsPage() {
@@ -21,6 +21,7 @@ export default function AdminSettingsPage() {
   const [defaultUserRole, setDefaultUserRole] = useState("user");
   const [sessionTimeout, setSessionTimeout] = useState(30);
 
+  console.log("logoUrl", logoUrl);
   // Contact Details States
   const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
@@ -49,13 +50,18 @@ export default function AdminSettingsPage() {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         });
+        console.log("res", res);
 
         if (res.data.success) {
           const d = res.data.data;
+          console.log("Settings data:", d);
+          console.log("Logo URL from API:", d.logo_url);
           setSiteName(d.site_name || "");
           setAdminEmail(d.admin_email || "");
-          setLogoUrl(d.logo_url || "");
-          setLogoPreview(d.logo_url || "");
+          const logoUrlValue = d.logo_url || "";
+          setLogoUrl(logoUrlValue);
+          setLogoPreview(logoUrlValue);
+          console.log("Logo preview set to:", logoUrlValue);
           setEmailNotifications(d.email_notifications || false);
           setMaintenanceMode(d.maintenance_mode || false);
           setDefaultUserRole(d.default_user_role || "user");
@@ -198,18 +204,29 @@ export default function AdminSettingsPage() {
       });
 
       if (res.data.success) {
-        toast.success(<div className="text-green-600 font-medium">{successMessage}</div>);
+        toast.success(successMessage, {
+          style: {
+            background: '#f0fdf4',
+            color: '#16a34a',
+            fontWeight: '500',
+          },
+        });
         
         // Trigger events to refresh components
         if (typeof window !== 'undefined') {
           // If site name was updated, trigger site name update event
-          if (updatedFields.site_name) {
+          if (updatedFields.site_name !== undefined) {
             window.dispatchEvent(new CustomEvent('siteNameUpdated'));
             localStorage.removeItem('siteNameCache');
           }
           
+          // If logo was updated, trigger logo update event
+          if (updatedFields.logo_url !== undefined) {
+            window.dispatchEvent(new CustomEvent('logoUpdated'));
+          }
+          
           // If contact details were updated, trigger contact details update event
-          if (updatedFields.contact_email || updatedFields.contact_phone || updatedFields.contact_address || updatedFields.contact_website) {
+          if (updatedFields.contact_email !== undefined || updatedFields.contact_phone !== undefined || updatedFields.contact_address !== undefined || updatedFields.contact_website !== undefined) {
             window.dispatchEvent(new CustomEvent('contactDetailsUpdated'));
           }
         }
@@ -264,7 +281,11 @@ export default function AdminSettingsPage() {
                   <img
                     src={logoPreview}
                     alt="Logo preview"
-                    className="h-20 w-auto object-contain border border-gray-300 rounded-lg p-2 bg-gray-50"
+                    width={200}
+                    height={80}
+                    className="h-20 w-auto max-w-[200px] object-contain border border-gray-300 rounded-lg p-2 bg-gray-50"
+                    loading="lazy"
+                    sizes="(max-width: 768px) 150px, 200px"
                   />
                 </div>
               )}

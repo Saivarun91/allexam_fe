@@ -472,6 +472,10 @@ export default function CheckoutPage() {
                                         <Badge className="bg-red-100 text-red-700 border-0 text-xs">
                                           Already Used
                                         </Badge>
+                                      ) : isExpired ? (
+                                        <Badge className="bg-red-100 text-red-700 border-0 text-xs">
+                                          Expired
+                                        </Badge>
                                       ) : (
                                         <Badge className="bg-green-100 text-green-700 border-0 text-xs">
                                           {coupon.discount}
@@ -483,14 +487,14 @@ export default function CheckoutPage() {
                                         Used on: {new Date(coupon.used_at).toLocaleDateString()}
                                       </p>
                                     )}
-                                    {!isAlreadyUsed && coupon.expiry_date && (
-                                      <p className="text-xs text-gray-500 mt-1">
-                                        Expires: {new Date(coupon.expiry_date).toLocaleDateString()}
+                                    {isExpired && !isAlreadyUsed && coupon.expiry_date && (
+                                      <p className="text-xs text-red-600 mt-1">
+                                        Expired on: {new Date(coupon.expiry_date).toLocaleDateString()}
                                       </p>
                                     )}
-                                    {isExpired && !isAlreadyUsed && (
-                                      <p className="text-xs text-red-600 mt-1">
-                                        Expired
+                                    {!isExpired && !isAlreadyUsed && coupon.expiry_date && (
+                                      <p className="text-xs text-gray-500 mt-1">
+                                        Expires: {new Date(coupon.expiry_date).toLocaleDateString()}
                                       </p>
                                     )}
                                   </div>

@@ -6,11 +6,18 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useSiteName } from "@/hooks/useSiteName";
+import { useLogoUrl } from "@/hooks/useLogoUrl";
 
 const Header = () => {
   const pathname = usePathname();
   const router = useRouter();
   const siteName = useSiteName();
+  const logoUrl = useLogoUrl();
+
+  // Don't show header on admin routes
+  if (pathname?.startsWith("/admin")) {
+    return null;
+  }
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState("");
   const [userEmail, setUserEmail] = useState("");
@@ -119,8 +126,22 @@ const Header = () => {
         
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+          {logoUrl ? (
+            <img 
+              src={logoUrl} 
+              alt={siteName || "Logo"} 
+              width={120}
+              height={32}
+              className="h-8 w-auto max-w-[120px] object-contain"
+              loading="lazy"
+              sizes="(max-width: 768px) 80px, 120px"
+            />
+          ) : (
           <GraduationCap className="w-6 h-6 md:w-8 md:h-8 text-[#1A73E8]" />
+          )}
+          {siteName && siteName.trim() && (
           <span className="text-lg md:text-xl font-bold text-[#0C1A35]">{siteName}</span>
+          )}
         </Link>
 
         {/* Desktop Navigation */}

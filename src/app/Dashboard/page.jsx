@@ -1,620 +1,3 @@
-// "use client";
-
-// import { useEffect, useState, useCallback } from "react";
-// import { useRouter } from "next/navigation";
-// import Link from "next/link";
-// import { ArrowRight, Clock, Trophy, TrendingUp, BookOpen, Award, Bell, Target, BarChart3 } from "lucide-react";
-// import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-// import { Button } from "@/components/ui/button";
-// import { Progress } from "@/components/ui/progress";
-// import { Badge } from "@/components/ui/badge";
-
-// const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
-
-// export default function Dashboard() {
-//   const router = useRouter();
-//   const [dashboardData, setDashboardData] = useState(null);
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState(null);
-
-//   const fetchDashboardData = useCallback(async (token) => {
-//     try {
-//       // Fetch dashboard data from API
-//       const res = await fetch(`${API_BASE_URL}/api/dashboard/`, {
-//         headers: { "Authorization": `Bearer ${token}` }
-//       });
-
-//       if (res.ok) {
-//         const data = await res.json();
-//         setDashboardData(data);
-//         setLoading(false);
-//       } else if (res.status === 401) {
-//         router.push("/auth?redirect=/dashboard");
-//         return;
-//       } else {
-//         throw new Error("Failed to fetch dashboard data");
-//       }
-//     } catch (err) {
-//       console.error("Error fetching dashboard:", err);
-//       setError(err.message);
-//       setLoading(false);
-//     }
-//   }, [router]);
-
-//   useEffect(() => {
-//     const token = localStorage.getItem("token");
-//     if (!token) {
-//       router.push("/auth/login?redirect=/dashboard");
-//       return;
-//     }
-
-//     fetchDashboardData(token);
-//   }, [router, fetchDashboardData]);
-
-//   const handleLogout = () => {
-//     localStorage.removeItem("token");
-//     localStorage.removeItem("user");
-//     localStorage.removeItem("role");
-//     router.push("/");
-//   };
-
-//   if (loading) {
-//     return (
-//       <div className="min-h-screen bg-background flex items-center justify-center">
-//         <div className="text-center">
-//           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-//           <p className="text-muted-foreground">Loading your dashboard...</p>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   if (error || !dashboardData) {
-//     return (
-//       <div className="min-h-screen bg-background flex items-center justify-center">
-//         <div className="text-center">
-//           <h2 className="text-2xl font-bold text-foreground mb-4">Failed to Load Dashboard</h2>
-//           <p className="text-muted-foreground mb-4">{error || "Unknown error occurred"}</p>
-//           <Button onClick={() => router.push("/")}>Go to Home</Button>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   const {
-//     userName = "Student",
-//     hasOngoingAttempt = false,
-//     ongoingAttempt,
-//     purchasedExams = [],
-//     freeAttempts = [],
-//     recommendedExams = [],
-//     topicPerformance = [],
-//     achievements = [],
-//     updates = [],
-//     overallAccuracy = 0,
-//     questionsAnswered = 0,
-//     timePracticing = "0m",
-//     testsCompleted = 0,
-//     coupons = [],
-//     testAttempts = []
-//   } = dashboardData;
-
-//   return (
-//     <div className="min-h-screen bg-background">      
-//       <main className="container mx-auto px-4 py-8">
-//         {/* Welcome Header */}
-//         <div className="flex items-center justify-between mb-8">
-//           <div>
-//             <h1 className="text-3xl font-bold text-foreground mb-2">
-//               Welcome back, {userName} 👋
-//             </h1>
-//             <p className="text-muted-foreground">
-//               Here's a quick snapshot of your exam preparation.
-//             </p>
-//           </div>
-//           <div className="flex items-center gap-4">
-//             {/* <Button variant="ghost" asChild>
-//               <Link href="/account">Account</Link>
-//             </Button> */}
-//             <Button variant="outline" onClick={handleLogout}>
-//               Logout
-//             </Button>
-//           </div>
-//         </div>
-
-//         {/* Overall Performance Section */}
-//         <Card className="mb-8 shadow-lg">
-//           <CardHeader>
-//             <CardTitle className="flex items-center gap-2">
-//               <BarChart3 className="w-5 h-5 text-primary" />
-//               Your Overall Performance
-//             </CardTitle>
-//           </CardHeader>
-//           <CardContent>
-//             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-//               <div className="text-center">
-//                 <div className="text-4xl font-bold text-[#1A73E8] mb-2">{overallAccuracy}%</div>
-//                 <div className="text-sm text-muted-foreground">Overall Accuracy</div>
-//               </div>
-//               <div className="text-center">
-//                 <div className="text-4xl font-bold text-foreground mb-2">{questionsAnswered}</div>
-//                 <div className="text-sm text-muted-foreground">Questions Answered</div>
-//               </div>
-//               <div className="text-center">
-//                 <div className="text-4xl font-bold text-foreground mb-2">{timePracticing}</div>
-//                 <div className="text-sm text-muted-foreground">Time Practicing</div>
-//               </div>
-//               <div className="text-center">
-//                 <div className="text-4xl font-bold text-foreground mb-2">{testsCompleted}</div>
-//                 <div className="text-sm text-muted-foreground">Tests Completed</div>
-//               </div>
-//             </div>
-
-//             {/* Topic-wise Performance */}
-//             {topicPerformance.length > 0 && (
-//               <div>
-//                 <h3 className="text-lg font-semibold mb-4">Topic-wise Performance</h3>
-//                 <div className="space-y-4">
-//                   {topicPerformance.map((topic, idx) => (
-//                     <div key={idx} className="space-y-2">
-//                       <div className="flex items-center justify-between text-sm">
-//                         <span className="font-medium">{topic.topic}</span>
-//                         <span className="text-muted-foreground">{topic.score}%</span>
-//                       </div>
-//                       <Progress value={topic.score} className="h-2" />
-//                     </div>
-//                   ))}
-//                 </div>
-//               </div>
-//             )}
-//           </CardContent>
-//         </Card>
-
-//         {/* Continue Where You Left Off */}
-//         {hasOngoingAttempt && ongoingAttempt && (
-//           <Card className="mb-8 border-primary/20 shadow-lg">
-//             <CardHeader>
-//               <CardTitle className="flex items-center gap-2">
-//                 <Clock className="w-5 h-5 text-primary" />
-//                 Continue where you left off
-//               </CardTitle>
-//             </CardHeader>
-//             <CardContent>
-//               <div className="flex items-start justify-between">
-//                 <div className="space-y-2 flex-1">
-//                   <h3 className="text-lg font-semibold">{ongoingAttempt.examName}</h3>
-//                   <p className="text-muted-foreground">{ongoingAttempt.testName}</p>
-//                   <div className="flex items-center gap-6 text-sm">
-//                     <span className="text-muted-foreground">
-//                       Progress: <strong>{ongoingAttempt.progress} / {ongoingAttempt.totalQuestions}</strong> questions
-//                     </span>
-//                     <span className="text-muted-foreground">
-//                       Last attempt: <strong>{ongoingAttempt.lastAttempt}</strong>
-//                     </span>
-//                     <span className="text-muted-foreground">
-//                       Time spent: <strong>{ongoingAttempt.timeSpent}</strong>
-//                     </span>
-//                   </div>
-//                   <Progress value={ongoingAttempt.progressPercent || 0} className="mt-3" />
-//                 </div>
-//                 <div className="flex flex-col gap-2 ml-4">
-//                   <Button asChild className="bg-primary hover:bg-primary/90">
-//                     <Link href={`/exams/${ongoingAttempt.slug}/practice/${ongoingAttempt.testId}`}>
-//                       Continue Exam <ArrowRight className="w-4 h-4 ml-2" />
-//                     </Link>
-//                   </Button>
-//                   <Button variant="outline" asChild>
-//                     <Link href={`/test-review/${ongoingAttempt.slug}`}>Review Last Attempt</Link>
-//                   </Button>
-//                 </div>
-//               </div>
-//             </CardContent>
-//           </Card>
-//         )}
-
-//         <div className="grid lg:grid-cols-3 gap-8">
-//           {/* Left Column */}
-//           <div className="lg:col-span-2 space-y-8">
-//             {/* Purchased/Enrolled Exams Section */}
-//             <Card className="shadow-lg">
-//               <CardHeader>
-//                 <CardTitle className="flex items-center gap-2">
-//                   <Trophy className="w-5 h-5 text-primary" />
-//                   Your Enrolled Exams
-//                 </CardTitle>
-//                 <CardDescription>Practice tests you have access to</CardDescription>
-//               </CardHeader>
-//               <CardContent>
-//                 {purchasedExams.length === 0 ? (
-//                   <div className="text-center py-8">
-//                     <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-//                     <p className="text-muted-foreground mb-4">You haven't enrolled in any exams yet</p>
-//                     <Button asChild>
-//                       <Link href="/exams">Browse Exams</Link>
-//                     </Button>
-//                   </div>
-//                 ) : (
-//                   <div className="space-y-4">
-//                     {purchasedExams.map((exam) => {
-//                       const [provider, ...examCodeParts] = exam.slug.split('-');
-//                       const examCode = examCodeParts.join('-');
-                      
-//                       return (
-//                         <Card key={exam.id} className="border-muted">
-//                           <CardHeader>
-//                             <div className="flex items-start justify-between">
-//                               <div className="space-y-1">
-//                                 <div className="flex items-center gap-2">
-//                                   <Badge variant="secondary">{exam.provider}</Badge>
-//                                   <Badge variant="outline">{exam.code}</Badge>
-//                                 </div>
-//                                 <CardTitle className="text-xl">{exam.name}</CardTitle>
-//                               </div>
-//                               <div className="text-right">
-//                                 <p className="text-sm text-muted-foreground">Access expires in</p>
-//                                 <p className="text-lg font-bold text-primary">{exam.daysLeft} days</p>
-//                               </div>
-//                             </div>
-//                           </CardHeader>
-//                           <CardContent>
-//                             <div className="space-y-4">
-//                               <div className="grid grid-cols-3 gap-4 text-center">
-//                                 <div>
-//                                   <p className="text-2xl font-bold text-foreground">{exam.progress}%</p>
-//                                   <p className="text-xs text-muted-foreground">Progress</p>
-//                                 </div>
-//                                 <div>
-//                                   <p className="text-2xl font-bold text-foreground">{exam.attempts}</p>
-//                                   <p className="text-xs text-muted-foreground">Attempts</p>
-//                                 </div>
-//                                 <div>
-//                                   <p className="text-2xl font-bold text-primary">{exam.bestScore}%</p>
-//                                   <p className="text-xs text-muted-foreground">Best Score</p>
-//                                 </div>
-//                               </div>
-//                               <Progress value={exam.progress} className="h-2" />
-//                               <div className="flex gap-2">
-//                                 <Button asChild className="flex-1 bg-primary hover:bg-primary/90">
-//                                   <Link href={`/exams/${provider}/${examCode}/practice`}>
-//                                     Continue Practice <ArrowRight className="w-4 h-4 ml-2" />
-//                                   </Link>
-//                                 </Button>
-//                                 <Button variant="outline" asChild className="flex-1">
-//                                   <Link href={`/exams/${provider}/${examCode}/practice`}>
-//                                     View Details
-//                                   </Link>
-//                                 </Button>
-//                               </div>
-//                             </div>
-//                           </CardContent>
-//                         </Card>
-//                       );
-//                     })}
-//                   </div>
-//                 )}
-//               </CardContent>
-//             </Card>
-
-//             {/* Free Attempts History */}
-//             {freeAttempts.length > 0 && (
-//               <Card className="shadow-lg">
-//                 <CardHeader>
-//                   <CardTitle className="flex items-center gap-2">
-//                     <BookOpen className="w-5 h-5 text-primary" />
-//                     Free Practice History
-//                   </CardTitle>
-//                   <CardDescription>Recent attempts on free tests</CardDescription>
-//                 </CardHeader>
-//                 <CardContent>
-//                   <div className="space-y-3">
-//                     {freeAttempts.map((attempt) => (
-//                       <div key={attempt.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-//                         <div>
-//                           <p className="font-medium">{attempt.provider} {attempt.name}</p>
-//                           <p className="text-sm text-muted-foreground">Last attempt: {attempt.lastAttempt}</p>
-//                         </div>
-//                         <div className="text-right">
-//                           <p className="font-bold text-foreground">{attempt.score}</p>
-//                           <Button size="sm" variant="outline" asChild className="mt-2">
-//                             <Link href={`/exams/${attempt.slug}/practice/pricing`}>Upgrade</Link>
-//                           </Button>
-//                         </div>
-//                       </div>
-//                     ))}
-//                   </div>
-//                 </CardContent>
-//               </Card>
-//             )}
-
-//             {/* Performance Summary */}
-//             {topicPerformance.length > 0 && (
-//               <Card className="shadow-lg">
-//                 <CardHeader>
-//                   <CardTitle className="flex items-center gap-2">
-//                     <BarChart3 className="w-5 h-5 text-primary" />
-//                     Topic-wise Performance
-//                   </CardTitle>
-//                   <CardDescription>Your strengths and areas to improve</CardDescription>
-//                 </CardHeader>
-//                 <CardContent>
-//                   <div className="space-y-4">
-//                     {topicPerformance.map((topic, idx) => (
-//                       <div key={idx} className="space-y-2">
-//                         <div className="flex items-center justify-between text-sm">
-//                           <span className="font-medium">{topic.topic}</span>
-//                           <span className="text-muted-foreground">{topic.score}%</span>
-//                         </div>
-//                         <Progress value={topic.score} className="h-2" />
-//                       </div>
-//                     ))}
-//                   </div>
-//                 </CardContent>
-//               </Card>
-//             )}
-
-//             {/* Recommended Exams */}
-//             {recommendedExams.length > 0 && (
-//               <Card className="shadow-lg">
-//                 <CardHeader>
-//                   <CardTitle className="flex items-center gap-2">
-//                     <Target className="w-5 h-5 text-primary" />
-//                     Recommended for You
-//                   </CardTitle>
-//                   <CardDescription>Popular exams based on your interests</CardDescription>
-//                 </CardHeader>
-//                 <CardContent>
-//                   <div className="grid sm:grid-cols-2 gap-4">
-//                     {recommendedExams.map((exam) => {
-//                       const [provider, ...examCodeParts] = exam.slug.split('-');
-//                       const examCode = examCodeParts.join('-');
-                      
-//                       return (
-//                         <Card key={exam.id} className="border-muted hover:border-primary/50 transition-colors">
-//                           <CardHeader>
-//                             <div className="flex items-start justify-between">
-//                               <div className="space-y-1">
-//                                 <Badge variant="secondary" className="text-xs">{exam.provider}</Badge>
-//                                 <CardTitle className="text-base">{exam.name}</CardTitle>
-//                                 <p className="text-xs text-muted-foreground">{exam.code}</p>
-//                               </div>
-//                               {exam.trending && (
-//                                 <Badge variant="default" className="text-xs">
-//                                   <TrendingUp className="w-3 h-3 mr-1" />
-//                                   Trending
-//                                 </Badge>
-//                               )}
-//                             </div>
-//                           </CardHeader>
-//                           <CardContent>
-//                             <p className="text-sm text-muted-foreground mb-3">{exam.questions} questions</p>
-//                             <Button size="sm" asChild className="w-full">
-//                               <Link href={`/exams/${provider}/${examCode}/practice`}>
-//                                 Explore <ArrowRight className="w-4 h-4 ml-2" />
-//                               </Link>
-//                             </Button>
-//                           </CardContent>
-//                         </Card>
-//                       );
-//                     })}
-//                   </div>
-//                 </CardContent>
-//               </Card>
-//             )}
-//           </div>
-
-//           {/* Right Column - Sidebar */}
-//           <div className="space-y-8">
-//             {/* Coupons Section */}
-//             <Card className="shadow-lg">
-//               <CardHeader>
-//                 <CardTitle className="flex items-center gap-2">
-//                   <Award className="w-5 h-5 text-primary" />
-//                   My Coupons
-//                 </CardTitle>
-//                 <CardDescription>Coupons you've used or have access to</CardDescription>
-//               </CardHeader>
-//               <CardContent>
-//                 {coupons && coupons.length > 0 ? (
-//                   <div className="space-y-3">
-//                     {coupons.map((coupon) => (
-//                       <div 
-//                         key={coupon.id}
-//                         className={`p-3 rounded-lg border ${
-//                           coupon.is_used 
-//                             ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200' 
-//                             : 'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200'
-//                         }`}
-//                       >
-//                         <div className="flex items-center justify-between mb-2">
-//                           <div className="flex items-center gap-2">
-//                             <code className="text-lg font-bold text-yellow-900">{coupon.code}</code>
-//                             {coupon.is_used && (
-//                               <Badge variant="default" className="bg-green-600 text-xs">
-//                                 Used
-//                               </Badge>
-//                             )}
-//                           </div>
-//                           <Badge variant="default" className="bg-green-600">
-//                             {coupon.discount} OFF
-//                           </Badge>
-//                         </div>
-//                         <div className="space-y-1">
-//                           {coupon.used_at && (
-//                             <p className="text-xs text-gray-600">
-//                               Used on: {new Date(coupon.used_at).toLocaleDateString()}
-//                             </p>
-//                           )}
-//                           {coupon.expiry_date && (
-//                             <p className="text-xs text-gray-600">
-//                               {coupon.is_used ? 'Expired' : 'Expires'}: {new Date(coupon.expiry_date).toLocaleDateString()}
-//                             </p>
-//                           )}
-//                         </div>
-//                       </div>
-//                     ))}
-//                   </div>
-//                 ) : (
-//                   <div className="text-center py-8">
-//                     <Award className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-//                     <p className="text-muted-foreground mb-2 font-medium">No Coupons Available</p>
-//                     <p className="text-sm text-muted-foreground">
-//                       You don't have any coupons yet. Complete purchases or reviews to earn discount codes!
-//                     </p>
-//                   </div>
-//                 )}
-//               </CardContent>
-//             </Card>
-
-//             {/* Test Attempts History */}
-//             <Card className="shadow-lg">
-//               <CardHeader>
-//                 <CardTitle className="flex items-center gap-2">
-//                   <Clock className="w-5 h-5 text-primary" />
-//                   Recent Test Attempts
-//                 </CardTitle>
-//                 <CardDescription>Your test history and performance</CardDescription>
-//               </CardHeader>
-//               <CardContent>
-//                 {testAttempts && testAttempts.length > 0 ? (
-//                   <div className="space-y-3">
-//                     {testAttempts.slice(0, 5).map((attempt) => (
-//                       <div 
-//                         key={attempt.id}
-//                         className={`p-3 rounded-lg border ${
-//                           attempt.passed 
-//                             ? 'bg-green-50/50 border-green-200' 
-//                             : 'bg-muted/50 border-muted'
-//                         }`}
-//                       >
-//                         <div className="flex items-center justify-between mb-1">
-//                           <p className="font-medium text-sm">{attempt.course_name || 'Practice Test'}</p>
-//                           <Badge variant={attempt.passed ? "default" : "destructive"}>
-//                             {attempt.score}%
-//                           </Badge>
-//                         </div>
-//                         <div className="flex items-center justify-between">
-//                           <p className="text-xs text-muted-foreground">
-//                             {new Date(attempt.date).toLocaleDateString('en-US', { 
-//                               year: 'numeric', 
-//                               month: 'short', 
-//                               day: 'numeric' 
-//                             })}
-//                           </p>
-//                           <div className="flex items-center gap-2">
-//                             {attempt.is_trial && (
-//                               <Badge variant="outline" className="text-xs text-yellow-600 border-yellow-600">
-//                                 Trial
-//                               </Badge>
-//                             )}
-//                             {attempt.passed && (
-//                               <Badge variant="default" className="text-xs bg-green-600">
-//                                 Passed
-//                               </Badge>
-//                             )}
-//                           </div>
-//                         </div>
-//                       </div>
-//                     ))}
-//                     {testAttempts.length > 5 && (
-//                       <div className="text-center pt-2">
-//                         <p className="text-xs text-muted-foreground">
-//                           Showing 5 of {testAttempts.length} attempts
-//                         </p>
-//                       </div>
-//                     )}
-//                   </div>
-//                 ) : (
-//                   <div className="text-center py-8">
-//                     <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-//                     <p className="text-muted-foreground mb-2 font-medium">No Test Attempts Yet</p>
-//                     <p className="text-sm text-muted-foreground mb-4">
-//                       Write a test to get experience and track your progress!
-//                     </p>
-//                     <Button asChild variant="outline" size="sm">
-//                       <Link href="/exams">
-//                         Browse Exams <ArrowRight className="w-4 h-4 ml-2" />
-//                       </Link>
-//                     </Button>
-//                   </div>
-//                 )}
-//               </CardContent>
-//             </Card>
-
-//             {/* Achievements */}
-//             {/* <Card className="shadow-lg">
-//               <CardHeader>
-//                 <CardTitle className="flex items-center gap-2">
-//                   <Award className="w-5 h-5 text-primary" />
-//                   Achievements
-//                 </CardTitle>
-//                 <CardDescription>Your milestones</CardDescription>
-//               </CardHeader>
-//               <CardContent>
-//                 <div className="space-y-3">
-//                   {achievements.length > 0 ? (
-//                     achievements.map((achievement) => (
-//                       <div 
-//                         key={achievement.id}
-//                         className={`flex items-center gap-3 p-3 rounded-lg ${
-//                           achievement.earned 
-//                             ? 'bg-primary/10 border border-primary/20' 
-//                             : 'bg-muted/50 opacity-60'
-//                         }`}
-//                       >
-//                         <span className="text-2xl">{achievement.icon}</span>
-//                         <div className="flex-1">
-//                           <p className={`font-medium text-sm ${
-//                             achievement.earned ? 'text-foreground' : 'text-muted-foreground'
-//                           }`}>
-//                             {achievement.title}
-//                           </p>
-//                         </div>
-//                         {achievement.earned && (
-//                           <Badge variant="default" className="text-xs">Earned</Badge>
-//                         )}
-//                       </div>
-//                     ))
-//                   ) : (
-//                     <p className="text-sm text-muted-foreground text-center py-4">
-//                       Complete tests to earn achievements!
-//                     </p>
-//                   )}
-//                 </div>
-//               </CardContent>
-//             </Card> */}
-
-//             {/* Updates & Notifications */}
-//             <Card className="shadow-lg">
-//               <CardHeader>
-//                 <CardTitle className="flex items-center gap-2">
-//                   <Bell className="w-5 h-5 text-primary" />
-//                   Updates
-//                 </CardTitle>
-//                 <CardDescription>Recent notifications</CardDescription>
-//               </CardHeader>
-//               <CardContent>
-//                 {updates.length === 0 ? (
-//                   <p className="text-sm text-muted-foreground text-center py-4">No new updates</p>
-//                 ) : (
-//                   <div className="space-y-3">
-//                     {updates.map((update) => (
-//                       <div key={update.id} className="p-3 bg-muted/50 rounded-lg">
-//                         <p className="text-sm text-foreground">{update.text}</p>
-//                         <p className="text-xs text-muted-foreground mt-1">{update.date}</p>
-//                       </div>
-//                     ))}
-//                   </div>
-//                 )}
-//               </CardContent>
-//             </Card>
-//           </div>
-//         </div>
-//       </main>
-//     </div>
-//   );
-// }
-
-
 
 
 "use client";
@@ -1176,8 +559,17 @@ export default function Dashboard() {
               <Ticket className="w-5 h-5 text-primary" /> My Coupons ({coupons.length})
             </CardTitle>
             <CardDescription>
-              {coupons.filter(c => !c.is_used).length > 0 
-                ? `${coupons.filter(c => !c.is_used).length} available coupon${coupons.filter(c => !c.is_used).length !== 1 ? 's' : ''} - Use each coupon only once`
+              {coupons.filter(c => {
+                const isExpired = c.expiry_date ? new Date(c.expiry_date) < new Date() : false;
+                return !c.is_used && !isExpired;
+              }).length > 0 
+                ? `${coupons.filter(c => {
+                    const isExpired = c.expiry_date ? new Date(c.expiry_date) < new Date() : false;
+                    return !c.is_used && !isExpired;
+                  }).length} available coupon${coupons.filter(c => {
+                    const isExpired = c.expiry_date ? new Date(c.expiry_date) < new Date() : false;
+                    return !c.is_used && !isExpired;
+                  }).length !== 1 ? 's' : ''} - Use each coupon only once`
                 : "Discount codes available to you"}
             </CardDescription>
           </CardHeader>
@@ -1193,11 +585,17 @@ export default function Dashboard() {
             ) : (
               <div>
                 {/* Available Coupons Section */}
-                {coupons.filter(c => !c.is_used).length > 0 && (
+                {coupons.filter(c => {
+                  const isExpired = c.expiry_date ? new Date(c.expiry_date) < new Date() : false;
+                  return !c.is_used && !isExpired;
+                }).length > 0 && (
                   <div className="mb-6">
                     <h3 className="text-lg font-semibold mb-4 text-green-700">Available Coupons</h3>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {coupons.filter(c => !c.is_used).map((coupon) => (
+                      {coupons.filter(c => {
+                        const isExpired = c.expiry_date ? new Date(c.expiry_date) < new Date() : false;
+                        return !c.is_used && !isExpired;
+                      }).map((coupon) => (
                   <div 
                     key={coupon.id} 
                           className="p-5 rounded-lg border-2 bg-gradient-to-br from-yellow-50 via-orange-50 to-amber-50 border-yellow-300 hover:border-yellow-400 hover:shadow-lg transition-all"
@@ -1236,6 +634,71 @@ export default function Dashboard() {
                             <p className="text-xs text-gray-600 italic">
                               💡 Use this coupon during checkout
                             </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Expired Coupons Section */}
+                {coupons.filter(c => {
+                  const isExpired = c.expiry_date ? new Date(c.expiry_date) < new Date() : false;
+                  return !c.is_used && isExpired;
+                }).length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold mb-4 text-red-700">Expired Coupons</h3>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {coupons.filter(c => {
+                        const isExpired = c.expiry_date ? new Date(c.expiry_date) < new Date() : false;
+                        return !c.is_used && isExpired;
+                      }).map((coupon) => (
+                        <div 
+                          key={coupon.id} 
+                          className="p-5 rounded-lg border-2 bg-gradient-to-br from-gray-50 to-gray-100 border-gray-300 opacity-75 relative"
+                        >
+                          {/* Overlay to indicate not available */}
+                          <div className="absolute inset-0 bg-gray-200/30 rounded-lg flex items-center justify-center pointer-events-none">
+                            <Badge variant="default" className="bg-red-600 text-white text-sm px-3 py-1">
+                              Expired
+                            </Badge>
+                          </div>
+                          
+                          <div className="relative z-10">
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <code className="text-2xl font-bold text-gray-500 tracking-wider line-through">{coupon.code}</code>
+                                  <button
+                                    className="p-1.5 rounded-md text-gray-400 cursor-not-allowed"
+                                    disabled
+                                    title="Coupon expired - Not available"
+                                  >
+                                    <Copy className="w-4 h-4" />
+                                  </button>
+                                </div>
+                                <Badge variant="default" className="bg-red-600 text-white text-xs mb-2">
+                                  Expired
+                                </Badge>
+                              </div>
+                              <Badge variant="default" className="text-sm bg-gray-500">
+                                {coupon.discount} OFF
+                              </Badge>
+                            </div>
+                            <div className="space-y-2 text-sm">
+                              {coupon.expiry_date && (
+                                <p className="text-red-600 font-medium">
+                                  ✗ Expired on: {new Date(coupon.expiry_date).toLocaleDateString('en-US', { 
+                                    year: 'numeric', 
+                                    month: 'short', 
+                                    day: 'numeric' 
+                                  })}
+                                </p>
+                              )}
+                              <p className="text-red-600 font-semibold text-xs">
+                                ⚠️ This coupon has expired and cannot be used
+                              </p>
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -1294,15 +757,6 @@ export default function Dashboard() {
                               <p className="text-red-600 font-semibold text-xs">
                                 ⚠️ This coupon can only be used once
                               </p>
-                      {coupon.expiry_date && (
-                                <p className="text-gray-500">
-                                  Expired: {new Date(coupon.expiry_date).toLocaleDateString('en-US', { 
-                            year: 'numeric', 
-                            month: 'short', 
-                            day: 'numeric' 
-                          })}
-                        </p>
-                      )}
                             </div>
                     </div>
                   </div>

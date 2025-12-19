@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useSiteName } from "@/hooks/useSiteName";
+import { useLogoUrl } from "@/hooks/useLogoUrl";
 import {
   Home,
   Layers,
@@ -23,6 +24,7 @@ import { useRouter } from "next/navigation";
 
 export default function AdminSidebar() {
   const siteName = useSiteName();
+  const logoUrl = useLogoUrl();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -66,8 +68,22 @@ export default function AdminSidebar() {
         {/* Logo */}
         <div className="h-20 flex items-center justify-center border-b border-[#1A73E8]/20 px-4 bg-[#0C1A35]">
           <div className="flex items-center gap-3">
+            {logoUrl ? (
+              <img 
+                src={logoUrl} 
+                alt={siteName || "Logo"} 
+                width={140}
+                height={40}
+                className="h-10 w-auto max-w-[140px] object-contain"
+                loading="lazy"
+                sizes="140px"
+              />
+            ) : (
             <GraduationCap className="w-8 h-8 text-[#1A73E8]" />
+            )}
+            {siteName && siteName.trim() && (
             <span className="text-xl font-bold text-white">{siteName}</span>
+            )}
           </div>
         </div>
 

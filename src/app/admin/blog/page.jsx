@@ -281,7 +281,17 @@ export default function AdminBlogPage() {
               <Input type="file" accept="image/*" onChange={handleImageUpload} />
               {uploading && <p className="text-sm text-blue-500">Uploading...</p>}
               {formData.image_url && (
-                <img src={formData.image_url} className="mt-2 w-full h-40 object-cover rounded-md" />
+                <div className="mt-2 w-full aspect-[16/9] rounded-md overflow-hidden">
+                  <img 
+                    src={formData.image_url} 
+                    alt="Blog image preview"
+                    width={600}
+                    height={338}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                    sizes="(max-width: 768px) 100vw, 600px"
+                  />
+                </div>
               )}
             </div>
 
@@ -311,9 +321,19 @@ export default function AdminBlogPage() {
             <Card key={blog.id} className="shadow-md">
               <CardContent className="p-4">
                 {blog.image_url ? (
-                  <img src={blog.image_url} className="w-full h-40 object-cover rounded-md mb-3" />
+                  <div className="w-full aspect-[16/9] rounded-md overflow-hidden mb-3">
+                    <img 
+                      src={blog.image_url} 
+                      alt={blog.title || "Blog image"}
+                      width={600}
+                      height={338}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                      sizes="(max-width: 768px) 100vw, 600px"
+                    />
+                  </div>
                 ) : (
-                  <div className="w-full h-40 bg-gray-100 flex items-center justify-center rounded-md mb-3 text-gray-500">
+                  <div className="w-full aspect-[16/9] bg-gray-100 flex items-center justify-center rounded-md mb-3 text-gray-500">
                     No Image Available
                   </div>
                 )}

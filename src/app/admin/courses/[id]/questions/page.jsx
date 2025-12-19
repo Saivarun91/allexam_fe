@@ -257,16 +257,27 @@ export default function CourseQuestionsManager() {
 
       const data = await res.json();
 
-      if (data.success) {
-        setMessage(`✅ ${data.created_count} questions uploaded successfully!`);
+      if (data.success || data.created_count > 0) {
+        let message = `✅ ${data.created_count} questions uploaded successfully!`;
         if (data.errors && data.errors.length > 0) {
-          console.log("Upload errors:", data.errors);
+          message += `\n⚠️ ${data.errors.length} rows had errors. Check console for details.`;
+          console.error("Upload errors:", data.errors);
+          console.error("First 5 errors:", data.errors.slice(0, 5));
         }
+        setMessage(message);
         setCsvFile(null);
         fetchQuestions();
-        setTimeout(() => setMessage(""), 5000);
+        setTimeout(() => setMessage(""), 8000);
       } else {
-        setMessage("❌ Error: " + (data.error || "Failed to upload"));
+        let errorMsg = data.error || data.message || "Failed to upload";
+        if (data.errors && data.errors.length > 0) {
+          errorMsg += `\n\nErrors found:\n${data.errors.slice(0, 5).join('\n')}`;
+          if (data.errors.length > 5) {
+            errorMsg += `\n... and ${data.errors.length - 5} more errors. Check console for full list.`;
+          }
+          console.error("All upload errors:", data.errors);
+        }
+        setMessage("❌ " + errorMsg);
       }
     } catch (error) {
       setMessage("❌ Error: " + error.message);
