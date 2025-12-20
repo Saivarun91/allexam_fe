@@ -7,7 +7,7 @@ import { TestProvider } from "@/contexts/TestContext";
 /* ================= METADATA (SERVER-SIDE SEO) ================= */
 
 export const metadata = {
-  title: "AllExamQuestions - Master Your Certification Exams with Practice Tests",
+  title: "AllExamQuestions - Certification Practice Tests",
   description:
     "Accurate, updated, exam-style questions trusted by thousands of professionals preparing for their next big certification. Practice with real exam questions and pass your certification exam.",
   keywords:
@@ -17,7 +17,7 @@ export const metadata = {
   },
   openGraph: {
     title:
-      "AllExamQuestions - Master Your Certification Exams with Practice Tests",
+      "AllExamQuestions - Certification Practice Tests",
     description:
       "Accurate, updated, exam-style questions trusted by thousands of professionals preparing for their next big certification.",
     type: "website",
@@ -26,7 +26,7 @@ export const metadata = {
   twitter: {
     card: "summary_large_image",
     title:
-      "AllExamQuestions - Master Your Certification Exams with Practice Tests",
+      "AllExamQuestions - Certification Practice Tests",
     description:
       "Accurate, updated, exam-style questions trusted by thousands of professionals preparing for their next big certification.",
   },
@@ -53,15 +53,15 @@ export default function RootLayout({ children }) {
 
         {/* ================= GOOGLE ANALYTICS ================= */}
         <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-PEVC55BHV2"
-          strategy="afterInteractive"
+          src="https://www.googletagmanager.com/gtag/js?id=G-4KCPVHB725"
+          strategy="lazyOnload"
         />
-        <Script id="google-analytics" strategy="afterInteractive">
+        <Script id="google-analytics" strategy="lazyOnload">
           {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', 'G-PEVC55BHV2', {
+            gtag('config', 'G-4KCPVHB725', {
               anonymize_ip: true,
             });
           `}
@@ -71,7 +71,7 @@ export default function RootLayout({ children }) {
           <TestProvider>
             {/* Header/Footer visibility handled internally */}
             <Header />
-            <main className="flex-1">{children}</main>
+            <main className="flex-1 pt-16 md:pt-20">{children}</main>
             <Footer />
           </TestProvider>
         </AuthProvider>

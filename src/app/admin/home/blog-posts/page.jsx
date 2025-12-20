@@ -24,6 +24,7 @@ import {
 import { Plus, Edit, Trash2, Eye, FileText, Image as ImageIcon, Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
+import { getOptimizedImageUrl } from "@/utils/imageUtils";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
@@ -420,15 +421,17 @@ export default function BlogPostsAdmin() {
                       {uploading && <p className="text-sm text-blue-500 mt-1">Uploading image...</p>}
                       {formData.image_url && (
                         <div className="mt-3">
-                          <div className="w-full aspect-[16/9] rounded-md overflow-hidden border border-[#D3E3FF]">
+                          <div className="w-full aspect-[16/9] rounded-md overflow-hidden border border-[#D3E3FF] bg-gray-100">
                             <img 
-                              src={formData.image_url} 
+                              src={getOptimizedImageUrl(formData.image_url, 600, 338)} 
                               alt="Featured image preview" 
                               width={600}
                               height={338}
-                              className="w-full h-full object-cover"
+                              className="w-full h-full object-contain"
+                              style={{ objectFit: 'contain' }}
                               loading="lazy"
                               sizes="(max-width: 768px) 100vw, 600px"
+                              decoding="async"
                             />
                           </div>
                           <p className="text-xs text-gray-500 mt-1">Uploaded image URL: {formData.image_url}</p>
@@ -462,15 +465,17 @@ export default function BlogPostsAdmin() {
                   <CardContent className="pt-6">
                     <div className="border border-[#D3E3FF] rounded-lg overflow-hidden bg-white hover:shadow-lg transition-shadow">
                       {formData.image_url ? (
-                        <div className="w-full aspect-[16/9] overflow-hidden">
+                        <div className="w-full aspect-[16/9] overflow-hidden bg-gray-100">
                           <img 
-                            src={formData.image_url} 
+                            src={getOptimizedImageUrl(formData.image_url, 600, 338)} 
                             alt="Blog preview" 
                             width={600}
                             height={338}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-contain"
+                            style={{ objectFit: 'contain' }}
                             loading="lazy"
                             sizes="(max-width: 768px) 100vw, 600px"
+                            decoding="async"
                           />
                         </div>
                       ) : (

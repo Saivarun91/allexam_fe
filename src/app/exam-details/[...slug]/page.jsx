@@ -59,9 +59,11 @@ export default function ExamDetailsPage() {
   };
 
   // Handle Start Test button click
-  const handleStartTest = (testId, index = 0, practiceUrl) => {
+  const handleStartTest = (test, index = 0, practiceUrl) => {
     const { provider, examCode } = getProviderAndCode();
-    const testUrl = practiceUrl ? `${practiceUrl}/${testId || index + 1}` : `/exams/${provider}/${examCode}/practice/${testId || index + 1}`;
+    // Use slug if available, otherwise fallback to id or index
+    const testIdentifier = (test && test.slug) ? test.slug : (test && test.id) ? test.id : (test || index + 1);
+    const testUrl = practiceUrl ? `${practiceUrl}/${testIdentifier}` : `/exams/${provider}/${examCode}/practice/${testIdentifier}`;
     
     if (!checkLogin()) {
       setPendingTestUrl(testUrl);
@@ -477,7 +479,7 @@ export default function ExamDetailsPage() {
                     {practiceUrl && (
                     <Button
                       className="w-full bg-[#1A73E8] hover:bg-[#1557B0] text-white"
-                      onClick={() => handleStartTest(test.id || index + 1, index, practiceUrl)}
+                      onClick={() => handleStartTest(test, index, practiceUrl)}
                     >
                       Start Test
                       <ArrowRight className="ml-2 w-4 h-4" />

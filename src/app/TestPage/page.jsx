@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect ,Suspense} from "react";
+import { getOptimizedImageUrl } from "@/utils/imageUtils";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Flag, Clock, X, Menu, CheckCircle2 } from "lucide-react";
@@ -330,9 +331,15 @@ function TestPlayerContent() {
 
                   {currentQuestionData.question_image && (
                     <img
-                      src={currentQuestionData.question_image}
+                      src={getOptimizedImageUrl(currentQuestionData.question_image, 800, 600)}
                       alt="Question"
+                      width={800}
+                      height={600}
                       className="max-w-full h-auto rounded-lg mb-4 border border-gray-200"
+                      style={{ maxWidth: '100%', height: 'auto' }}
+                      loading="lazy"
+                      sizes="(max-width: 768px) 100vw, 800px"
+                      decoding="async"
                       onError={(e) => e.target.style.display = 'none'}
                     />
                   )}

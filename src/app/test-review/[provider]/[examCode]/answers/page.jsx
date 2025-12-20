@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle, XCircle, Clock, Shield, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle, Clock, Shield, ChevronLeft, ChevronRight, Compass } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,9 @@ export default function ReviewAnswersPage() {
   const [loading, setLoading] = useState(true);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedQuestions, setSelectedQuestions] = useState(new Set());
+  const [navigatorPage, setNavigatorPage] = useState(1);
+  
+  const QUESTIONS_PER_PAGE = 20;
 
   useEffect(() => {
     loadReviewAnswers();
@@ -66,17 +69,24 @@ export default function ReviewAnswersPage() {
           }
           
           // Check if correct (handle both single and multiple)
+          // correct_answers is stored as array of option texts
           let isCorrect = false;
           let isUnanswered = userAnswerValue === null || userAnswerValue === undefined;
           
-          if (!isUnanswered && q.correct_answer) {
-            if (Array.isArray(userAnswerValue)) {
-              // Multiple choice - check if arrays match
-              const correctArray = Array.isArray(q.correct_answer) ? q.correct_answer : [q.correct_answer];
-              isCorrect = JSON.stringify(userAnswerValue.sort()) === JSON.stringify(correctArray.sort());
-            } else {
-              // Single choice - compare strings/values
-              isCorrect = String(userAnswerValue).trim() === String(q.correct_answer).trim();
+          if (!isUnanswered) {
+            const correctAnswers = q.correct_answers || (q.correct_answer ? [q.correct_answer] : []);
+            
+            if (correctAnswers.length > 0) {
+              if (Array.isArray(userAnswerValue)) {
+                // Multiple choice - compare arrays of option texts
+                const userAnswersNormalized = userAnswerValue.map(a => String(a).trim()).sort();
+                const correctAnswersNormalized = correctAnswers.map(a => String(a).trim()).sort();
+                isCorrect = JSON.stringify(userAnswersNormalized) === JSON.stringify(correctAnswersNormalized);
+              } else {
+                // Single choice - compare option text
+                const userAnswerNormalized = String(userAnswerValue).trim();
+                isCorrect = correctAnswers.some(ca => String(ca).trim() === userAnswerNormalized);
+              }
             }
           }
           
@@ -105,6 +115,11 @@ export default function ReviewAnswersPage() {
 
   const handleQuestionNavigate = (index) => {
     setCurrentQuestionIndex(index);
+    // Update navigator page if needed
+    const newPage = Math.floor(index / QUESTIONS_PER_PAGE) + 1;
+    if (newPage !== navigatorPage) {
+      setNavigatorPage(newPage);
+    }
     // Scroll to top of question
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -122,6 +137,22 @@ export default function ReviewAnswersPage() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
+  
+  // Calculate pagination
+  const totalNavigatorPages = Math.ceil(questionsWithAnswers.length / QUESTIONS_PER_PAGE);
+  const startQuestion = (navigatorPage - 1) * QUESTIONS_PER_PAGE;
+  const endQuestion = Math.min(startQuestion + QUESTIONS_PER_PAGE, questionsWithAnswers.length);
+  
+  // Update navigator page when current question changes
+  useEffect(() => {
+    if (questionsWithAnswers.length > 0) {
+      const totalPages = Math.ceil(questionsWithAnswers.length / QUESTIONS_PER_PAGE);
+      const newPage = Math.floor(currentQuestionIndex / QUESTIONS_PER_PAGE) + 1;
+      if (newPage !== navigatorPage && newPage >= 1 && newPage <= totalPages) {
+        setNavigatorPage(newPage);
+      }
+    }
+  }, [currentQuestionIndex, questionsWithAnswers.length, navigatorPage]);
 
   if (loading) {
     return (
@@ -158,28 +189,31 @@ export default function ReviewAnswersPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header with Back Button */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4">
+      {/* Header with Back Button - Fixed below main navbar */}
+      <div className="bg-white border-b border-gray-200 fixed top-16 md:top-20 left-0 right-0 z-40">
+        <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
-            <Link
-              href={`/test-review/${provider}/${examCode}`}
+            <button
+              onClick={() => router.push(`/test-review/${provider}/${examCode}`)}
               className="inline-flex items-center text-sm text-[#0C1A35]/70 hover:text-[#1A73E8] transition-colors"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Results
-            </Link>
-            <div className="text-sm font-semibold text-[#0C1A35]">
+            </button>
+            <div className="text-sm text-[#0C1A35]">
               Question {currentQuestionIndex + 1} of {totalQuestions}
             </div>
           </div>
         </div>
       </div>
+      
+      {/* Spacer to account for fixed header */}
+      <div className="h-14 md:h-[68px]"></div>
 
       <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="flex gap-6">
           {/* Main Question Content */}
-          <div className="lg:col-span-3">
+          <div className="flex-1">
             <Card className="border-[#DDE7FF]">
               <div className="p-6">
                 {/* Question Header */}
@@ -229,7 +263,9 @@ export default function ReviewAnswersPage() {
                       optionsList = currentQuestion.options.map((opt, idx) => ({
                         letter: String.fromCharCode(65 + idx), // A, B, C, D...
                         text: typeof opt === 'string' ? opt : (opt.text || opt.label || opt.value || ''),
-                        image: typeof opt === 'object' ? (opt.image_url || opt.image) : null
+                        image: typeof opt === 'object' ? (opt.image_url || opt.image) : null,
+                        explanation: typeof opt === 'object' ? (opt.explanation || '') : '',
+                        originalIndex: idx // Store original index for correct answer matching
                       })).filter(opt => opt.text && opt.text.trim() !== '');
                     } else {
                       // Old format: option_a, option_b, etc.
@@ -257,46 +293,92 @@ export default function ReviewAnswersPage() {
                       );
                     }
                     
+                    // Build full options list with all metadata for normalization
+                    const fullOptionsList = currentQuestion.options && Array.isArray(currentQuestion.options) && currentQuestion.options.length > 0
+                      ? currentQuestion.options.map((opt, idx) => ({
+                          index: idx,
+                          letter: String.fromCharCode(65 + idx),
+                          text: typeof opt === 'string' ? opt : (opt.text || opt.label || opt.value || '')
+                        }))
+                      : [];
+                    
+                    // Helper function to normalize answer to option text
+                    const normalizeToOptionText = (answer) => {
+                      const answerStr = String(answer).trim();
+                      if (fullOptionsList.length > 0) {
+                        // Try to find matching option by text, index, or letter
+                        const matchedOpt = fullOptionsList.find(opt => {
+                          const optText = String(opt.text).trim();
+                          return optText === answerStr || 
+                                 optText.toLowerCase() === answerStr.toLowerCase() ||
+                                 String(opt.index) === answerStr ||
+                                 opt.letter.toUpperCase() === answerStr.toUpperCase();
+                        });
+                        return matchedOpt ? matchedOpt.text : answerStr;
+                      }
+                      return answerStr;
+                    };
+                    
                     return optionsList.map((opt, optIdx) => {
                       const option = opt.letter;
                       const optionText = opt.text;
                       if (!optionText) return null;
                       
                       // Check if this is the user's answer
-                      // Handle both letter format (A, B, C) and index format (0, 1, 2)
+                      // User answers are stored as option text strings
                       const isUserAnswer = currentQuestion.userAnswer !== null && currentQuestion.userAnswer !== undefined
                         ? (Array.isArray(currentQuestion.userAnswer) 
-                            ? currentQuestion.userAnswer.includes(option) || 
-                              currentQuestion.userAnswer.includes(opt.letter) ||
-                              currentQuestion.userAnswer.includes(String(optIdx)) ||
-                              currentQuestion.userAnswer.includes(optIdx)
-                            : String(currentQuestion.userAnswer).trim() === option || 
-                              String(currentQuestion.userAnswer).trim() === opt.letter ||
-                              String(currentQuestion.userAnswer).trim() === String(optIdx) ||
-                              currentQuestion.userAnswer === optIdx)
+                            ? currentQuestion.userAnswer.some(ua => {
+                                const uaStr = String(ua).trim();
+                                const optTextStr = String(optionText).trim();
+                                return uaStr === optTextStr || uaStr.toLowerCase() === optTextStr.toLowerCase();
+                              })
+                            : (() => {
+                                const uaStr = String(currentQuestion.userAnswer).trim();
+                                const optTextStr = String(optionText).trim();
+                                return uaStr === optTextStr || uaStr.toLowerCase() === optTextStr.toLowerCase();
+                              })())
                         : false;
                       
                       // Check if this is the correct answer
-                      // Handle both correct_answer (letter) and correct_answers (array of indices/letters)
-                      const correctAnswer = currentQuestion.correct_answer || currentQuestion.correct_answers;
+                      // correct_answers can be stored as option text strings OR option indices OR option letters
+                      const correctAnswers = currentQuestion.correct_answers || 
+                                           (currentQuestion.correct_answer ? [currentQuestion.correct_answer] : []);
+                      
                       let isCorrectAnswer = false;
                       
-                      if (correctAnswer) {
-                        if (Array.isArray(correctAnswer)) {
-                          // Array format - check if option letter or index matches
-                          isCorrectAnswer = correctAnswer.includes(option) || 
-                                          correctAnswer.includes(opt.letter) ||
-                                          correctAnswer.includes(String(optIdx)) ||
-                                          correctAnswer.includes(optIdx);
-                        } else {
-                          // Single value - check if matches option letter or index
-                          const correctStr = String(correctAnswer).trim();
-                          isCorrectAnswer = correctStr === option || 
-                                          correctStr === opt.letter ||
-                                          correctStr === String(optIdx) ||
-                                          correctAnswer === optIdx;
-                        }
+                      if (correctAnswers.length > 0) {
+                        // Normalize current option text
+                        const normalizedOptionText = normalizeToOptionText(optionText).toLowerCase().trim();
+                        
+                        // Check each correct answer - try multiple matching strategies
+                        isCorrectAnswer = correctAnswers.some(ca => {
+                          const caStr = String(ca).trim();
+                          const normalizedCorrectAnswer = normalizeToOptionText(ca).toLowerCase().trim();
+                          
+                          // Direct normalized comparison
+                          if (normalizedCorrectAnswer === normalizedOptionText) {
+                            return true;
+                          }
+                          
+                          // Also try direct string comparison (case-insensitive)
+                          if (caStr.toLowerCase() === optionText.toLowerCase().trim()) {
+                            return true;
+                          }
+                          
+                          // Try matching by letter if correct answer is a single letter
+                          if (caStr.length === 1 && caStr.match(/^[A-Z]$/i)) {
+                            if (caStr.toUpperCase() === option.toUpperCase()) {
+                              return true;
+                            }
+                          }
+                          
+                          return false;
+                        });
                       }
+                      
+                      // Get option explanation if available
+                      const optionExplanation = opt.explanation || '';
                     
                     // Determine styling
                     // Priority: Show correct answers in green, wrong user answers in red
@@ -306,6 +388,7 @@ export default function ReviewAnswersPage() {
                     let labelColor = 'text-[#0C1A35]';
                     let badge = null;
                     
+                    // Priority: Always show correct answers in green
                     if (isCorrectAnswer && isUserAnswer) {
                       // User's correct answer - green with checkmark
                       bgColor = 'bg-green-50';
@@ -319,7 +402,7 @@ export default function ReviewAnswersPage() {
                         </Badge>
                       );
                     } else if (isCorrectAnswer) {
-                      // Correct answer (not selected by user) - always green
+                      // Correct answer (not selected by user) - ALWAYS show in green
                       bgColor = 'bg-green-50';
                       borderColor = 'border-green-500';
                       textColor = 'text-green-900';
@@ -342,6 +425,12 @@ export default function ReviewAnswersPage() {
                           Your Answer (Wrong)
                         </Badge>
                       );
+                    } else {
+                      // Default: not selected, not correct
+                      bgColor = 'bg-white';
+                      borderColor = 'border-gray-200';
+                      textColor = 'text-[#0C1A35]';
+                      labelColor = 'text-[#0C1A35]';
                     }
                     
                       return (
@@ -353,9 +442,16 @@ export default function ReviewAnswersPage() {
                             <span className={`font-semibold min-w-[24px] ${labelColor}`}>
                               {option}.
                             </span>
-                            <span className={`flex-1 ${textColor} font-medium`}>
-                              {optionText}
-                            </span>
+                            <div className="flex-1">
+                              <span className={`${textColor} font-medium`}>
+                                {optionText}
+                              </span>
+                              {optionExplanation && optionExplanation.trim() !== '' && (
+                                <p className={`mt-2 text-sm ${isCorrectAnswer ? 'text-green-700' : isUserAnswer && !isCorrectAnswer ? 'text-red-700' : 'text-gray-600'}`}>
+                                  {optionExplanation}
+                                </p>
+                              )}
+                            </div>
                             {badge}
                           </div>
                         </div>
@@ -364,16 +460,18 @@ export default function ReviewAnswersPage() {
                   })()}
                 </div>
                 
-                {/* Explanation */}
-                <div className="mt-6 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg">
-                  <p className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
-                    <Shield className="w-4 h-4" />
-                    Explanation:
-                  </p>
-                  <p className="text-blue-800 leading-relaxed">
-                    {currentQuestion.explanation || 'No explanation available for this question.'}
-                  </p>
-                </div>
+                {/* Overall Explanation */}
+                {currentQuestion.explanation && currentQuestion.explanation.trim() !== '' && (
+                  <div className="mt-6 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg">
+                    <p className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                      <Shield className="w-4 h-4" />
+                      Explanation:
+                    </p>
+                    <p className="text-blue-800 leading-relaxed">
+                      {currentQuestion.explanation}
+                    </p>
+                  </div>
+                )}
 
                 {/* Navigation Buttons */}
                 <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
@@ -404,13 +502,45 @@ export default function ReviewAnswersPage() {
             </Card>
           </div>
 
-          {/* Question Navigator Sidebar */}
-          <div className="lg:col-span-1">
-            <Card className="border-[#DDE7FF] sticky top-24">
+          {/* Question Navigator Sidebar - Fixed Width */}
+          <div className="w-64 flex-shrink-0">
+            <Card className="border-[#DDE7FF] sticky top-[112px] md:top-[132px]">
               <div className="p-4">
-                <h3 className="font-semibold text-[#0C1A35] mb-4">Question Navigator</h3>
-                <div className="grid grid-cols-5 gap-2 max-h-[600px] overflow-y-auto">
-                  {questionsWithAnswers.map((q, idx) => {
+                <div className="flex items-center gap-2 mb-4">
+                  <Compass className="w-5 h-5 text-[#1A73E8]" />
+                  <h3 className="font-semibold text-[#0C1A35]">Question Navigator</h3>
+                </div>
+                
+                {/* Summary Stats */}
+                <div className="space-y-1 text-sm mb-4 pb-4 border-b border-gray-200">
+                  <div className="flex justify-between text-[#0C1A35]/70">
+                    <span>Total:</span>
+                    <span className="font-medium text-[#0C1A35]">{totalQuestions}</span>
+                  </div>
+                  <div className="flex justify-between text-[#0C1A35]/70">
+                    <span>Correct:</span>
+                    <span className="font-semibold text-green-600">
+                      {questionsWithAnswers.filter(q => q.isCorrect).length}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-[#0C1A35]/70">
+                    <span>Incorrect:</span>
+                    <span className="font-semibold text-red-600">
+                      {questionsWithAnswers.filter(q => !q.isCorrect && !q.isUnanswered).length}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-[#0C1A35]/70">
+                    <span>Unanswered:</span>
+                    <span className="font-semibold text-yellow-600">
+                      {questionsWithAnswers.filter(q => q.isUnanswered).length}
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Question Grid with Pagination */}
+                <div className="grid grid-cols-5 gap-2 mb-4">
+                  {questionsWithAnswers.slice(startQuestion, endQuestion).map((q, localIdx) => {
+                    const idx = startQuestion + localIdx;
                     const isCurrent = idx === currentQuestionIndex;
                     const isCorrect = q.isCorrect;
                     const isUnanswered = q.isUnanswered;
@@ -421,41 +551,43 @@ export default function ReviewAnswersPage() {
                         key={q.questionNumber}
                         onClick={() => handleQuestionNavigate(idx)}
                         className={`
-                          aspect-square rounded-lg border-2 font-semibold text-sm transition-all
-                          ${isCurrent ? 'border-[#1A73E8] bg-[#1A73E8] text-white shadow-md scale-110' : ''}
-                          ${!isCurrent && isCorrect ? 'border-green-500 bg-green-50 text-green-700' : ''}
-                          ${!isCurrent && !isCorrect && isAnswered ? 'border-red-500 bg-red-50 text-red-700' : ''}
-                          ${!isCurrent && isUnanswered ? 'border-yellow-500 bg-yellow-50 text-yellow-700' : ''}
-                          ${!isCurrent && !isCorrect && !isAnswered && !isUnanswered ? 'border-gray-300 bg-white text-[#0C1A35]/70 hover:border-[#1A73E8]/50' : ''}
+                          aspect-square rounded-lg border-2 font-semibold text-sm transition-all relative
+                          ${isCurrent ? 'border-green-500 bg-green-500 text-white shadow-md' : ''}
+                          ${!isCurrent && isCorrect ? 'border-green-300 bg-green-50 text-green-700' : ''}
+                          ${!isCurrent && !isCorrect && isAnswered ? 'border-red-300 bg-red-50 text-red-700' : ''}
+                          ${!isCurrent && isUnanswered ? 'border-yellow-300 bg-yellow-50 text-yellow-700' : ''}
+                          ${!isCurrent && !isCorrect && !isAnswered && !isUnanswered ? 'border-gray-300 bg-white text-gray-600 hover:border-[#1A73E8]/50' : ''}
                         `}
+                        title={`Question ${q.questionNumber}${isCorrect ? ' - Correct' : isUnanswered ? ' - Unanswered' : ' - Incorrect'}`}
                       >
-                        {q.questionNumber}
+                        <span className="relative z-10">{q.questionNumber}</span>
                       </button>
                     );
                   })}
                 </div>
                 
-                {/* Summary */}
-                <div className="mt-4 pt-4 border-t border-gray-200 space-y-2 text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Correct:</span>
-                    <span className="font-semibold text-green-600">
-                      {questionsWithAnswers.filter(q => q.isCorrect).length}
+                {/* Pagination Controls */}
+                {totalNavigatorPages > 1 && (
+                  <div className="flex items-center justify-center gap-3 pt-4 border-t border-gray-200">
+                    <button
+                      onClick={() => setNavigatorPage(prev => Math.max(1, prev - 1))}
+                      disabled={navigatorPage === 1}
+                      className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 transition-colors"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <span className="text-sm text-[#0C1A35]/70 font-medium">
+                      Page {navigatorPage}/{totalNavigatorPages}
                     </span>
+                    <button
+                      onClick={() => setNavigatorPage(prev => Math.min(totalNavigatorPages, prev + 1))}
+                      disabled={navigatorPage === totalNavigatorPages}
+                      className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 transition-colors"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Incorrect:</span>
-                    <span className="font-semibold text-red-600">
-                      {questionsWithAnswers.filter(q => !q.isCorrect && !q.isUnanswered).length}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Unanswered:</span>
-                    <span className="font-semibold text-yellow-600">
-                      {questionsWithAnswers.filter(q => q.isUnanswered).length}
-                    </span>
-                  </div>
-                </div>
+                )}
               </div>
             </Card>
           </div>

@@ -32,6 +32,7 @@ import {
 import { Plus, Edit, Trash2, Upload, Download, FileText, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { checkAuth, getAuthHeaders } from "@/utils/authCheck";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
@@ -126,7 +127,7 @@ export default function QuestionsManager() {
     setFormData({
       question_text: "",
       question_type: "single",
-      options: [{ text: "" }, { text: "" }, { text: "" }, { text: "" }],
+      options: [{ text: "", explanation: "" }, { text: "", explanation: "" }, { text: "", explanation: "" }, { text: "", explanation: "" }],
       correct_answers: [],
       explanation: "",
       question_image: "",
@@ -138,10 +139,18 @@ export default function QuestionsManager() {
 
   const handleEdit = (question) => {
     setEditing(question);
+    // Ensure options have explanation field
+    const optionsWithExplanations = question.options.length > 0 
+      ? question.options.map(opt => ({ 
+          text: opt.text || opt, 
+          explanation: opt.explanation || "" 
+        }))
+      : [{ text: "", explanation: "" }, { text: "", explanation: "" }, { text: "", explanation: "" }, { text: "", explanation: "" }];
+    
     setFormData({
       question_text: question.question_text,
       question_type: question.question_type,
-      options: question.options.length > 0 ? question.options : [{ text: "" }, { text: "" }, { text: "" }, { text: "" }],
+      options: optionsWithExplanations,
       correct_answers: question.correct_answers,
       explanation: question.explanation || "",
       question_image: question.question_image || "",
@@ -161,7 +170,10 @@ export default function QuestionsManager() {
         course_id: selectedCourse.id,
         question_text: formData.question_text,
         question_type: formData.question_type,
-        options: formData.options.filter(opt => opt.text.trim() !== ""),
+        options: formData.options.filter(opt => opt.text && opt.text.trim() !== "").map(opt => ({
+          text: opt.text.trim(),
+          explanation: opt.explanation ? opt.explanation.trim() : ""
+        })),
         correct_answers: formData.correct_answers,
         explanation: formData.explanation,
         question_image: formData.question_image || null,
@@ -306,7 +318,7 @@ export default function QuestionsManager() {
   const addOption = () => {
     setFormData({
       ...formData,
-      options: [...formData.options, { text: "" }]
+      options: [...formData.options, { text: "", explanation: "" }]
     });
   };
 
@@ -315,9 +327,12 @@ export default function QuestionsManager() {
     setFormData({ ...formData, options: newOptions });
   };
 
-  const updateOption = (index, value) => {
+  const updateOption = (index, value, field = 'text') => {
     const newOptions = [...formData.options];
-    newOptions[index] = { text: value };
+    if (!newOptions[index]) {
+      newOptions[index] = { text: "", explanation: "" };
+    }
+    newOptions[index] = { ...newOptions[index], [field]: value };
     setFormData({ ...formData, options: newOptions });
   };
 
@@ -343,9 +358,9 @@ export default function QuestionsManager() {
   };
 
   const downloadCSVTemplate = () => {
-    const csvContent = `question_text,question_type,options,correct_answers,explanation,marks,tags
-"What is AWS?","single","Amazon Web Services|A cloud platform|A database|A programming language","Amazon Web Services","AWS stands for Amazon Web Services, a comprehensive cloud computing platform.",1,"aws,cloud"
-"Select cloud providers (multiple)","multiple","AWS|Azure|Google Cloud|Oracle|IBM Cloud","AWS,Azure,Google Cloud","Major cloud providers include AWS, Azure, and Google Cloud.",1,"cloud,providers"`;
+    const csvContent = `question,question type,Answer Option A,explanation,Answer Option B,explanation,Answer Option C,explanation,Answer Option D,explanation,Answer Option E,explanation,Answer Option F,explanation,correct answers,overall explanation,domain
+"What is AWS?","single","Amazon Web Services","AWS is a cloud computing platform","A cloud platform","Generic cloud service","A database","Database system","A programming language","Programming language","","","Amazon Web Services","AWS stands for Amazon Web Services, a comprehensive cloud computing platform.","aws"
+"Select cloud providers (multiple)","multiple","AWS","Amazon Web Services","Azure","Microsoft cloud platform","Google Cloud","Google cloud platform","Oracle","Oracle cloud","IBM Cloud","IBM cloud platform","","AWS,Azure,Google Cloud","Major cloud providers include AWS, Azure, and Google Cloud.","cloud"`;
     
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -517,17 +532,59 @@ export default function QuestionsManager() {
                               <Plus className="w-4 h-4 mr-1" /> Add Option
                             </Button>
                           </div>
+                          {formData.question_type === "single" ? (
+                            <RadioGroup
+                              value={formData.correct_answers[0] || ""}
+                              onValueChange={(value) => toggleCorrectAnswer(value)}
+                            >
                           {formData.options.map((option, index) => (
-                            <div key={index} className="flex gap-2 mb-2 items-center">
+                                <div key={index} className="mb-4 p-3 border rounded-lg">
+                                  <div className="flex gap-2 mb-2 items-center">
+                                    <RadioGroupItem
+                                      value={option.text || ""}
+                                      id={`option-${index}`}
+                                      disabled={!option.text?.trim()}
+                                    />
+                                    <Input
+                                      value={option.text || ""}
+                                      onChange={(e) => updateOption(index, e.target.value, 'text')}
+                                      placeholder={`Option ${String.fromCharCode(65 + index)}`}
+                                      className="flex-1"
+                                    />
+                                    {formData.options.length > 2 && (
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => removeOption(index)}
+                                      >
+                                        <X className="w-4 h-4" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                  <Textarea
+                                    value={option.explanation || ""}
+                                    onChange={(e) => updateOption(index, e.target.value, 'explanation')}
+                                    placeholder={`Explanation for Option ${String.fromCharCode(65 + index)} (optional)`}
+                                    rows={2}
+                                    className="ml-6 text-sm"
+                                  />
+                                </div>
+                              ))}
+                            </RadioGroup>
+                          ) : (
+                            formData.options.map((option, index) => (
+                              <div key={index} className="mb-4 p-3 border rounded-lg">
+                                <div className="flex gap-2 mb-2 items-center">
                               <Checkbox
-                                checked={formData.correct_answers.includes(option.text)}
-                                onCheckedChange={() => toggleCorrectAnswer(option.text)}
-                                disabled={!option.text.trim()}
+                                    checked={formData.correct_answers.includes(option.text || "")}
+                                    onCheckedChange={() => toggleCorrectAnswer(option.text || "")}
+                                    disabled={!option.text?.trim()}
                               />
                               <Input
-                                value={option.text}
-                                onChange={(e) => updateOption(index, e.target.value)}
-                                placeholder={`Option ${index + 1}`}
+                                    value={option.text || ""}
+                                    onChange={(e) => updateOption(index, e.target.value, 'text')}
+                                    placeholder={`Option ${String.fromCharCode(65 + index)}`}
                                 className="flex-1"
                               />
                               {formData.options.length > 2 && (
@@ -541,7 +598,16 @@ export default function QuestionsManager() {
                                 </Button>
                               )}
                             </div>
-                          ))}
+                                <Textarea
+                                  value={option.explanation || ""}
+                                  onChange={(e) => updateOption(index, e.target.value, 'explanation')}
+                                  placeholder={`Explanation for Option ${String.fromCharCode(65 + index)} (optional)`}
+                                  rows={2}
+                                  className="ml-6 text-sm"
+                                />
+                              </div>
+                            ))
+                          )}
                         </div>
 
                         <div>

@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* Optimize font loading */
+@layer base {
+  * {
+    font-display: swap;
+  }
+}
 
 @custom-variant dark (&:is(.dark *));
 

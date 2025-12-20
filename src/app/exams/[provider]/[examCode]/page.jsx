@@ -43,8 +43,10 @@ export default function ExamDetailPage() {
   };
 
   // Handle Start Test button click
-  const handleStartTest = (testId, index = 0) => {
-    const testUrl = `/exams/${provider}/${examCode}/practice/${testId || (index + 1)}`;
+  const handleStartTest = (test, index = 0) => {
+    // Use slug if available, otherwise fallback to id or index
+    const testIdentifier = (test && test.slug) ? test.slug : (test && test.id) ? test.id : (test || (index + 1));
+    const testUrl = `/exams/${provider}/${examCode}/practice/${testIdentifier}`;
     
     if (!checkLogin()) {
       setPendingTestUrl(testUrl);
@@ -396,7 +398,7 @@ export default function ExamDetailPage() {
                       )}
                       <Button 
                         className="w-full bg-[#1A73E8] text-white hover:bg-[#1557B0]"
-                        onClick={() => handleStartTest(test.id || (idx + 1), idx)}
+                        onClick={() => handleStartTest(test, idx)}
                       >
                         {test.progress ? "Continue Test" : "Start Test"}
                         <ArrowRight className="w-4 h-4 ml-2" />

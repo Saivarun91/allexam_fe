@@ -7,6 +7,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useSiteName } from "@/hooks/useSiteName";
 import { useLogoUrl } from "@/hooks/useLogoUrl";
+import { getOptimizedImageUrl } from "@/utils/imageUtils";
 
 const Header = () => {
   const pathname = usePathname();
@@ -121,20 +122,22 @@ const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-white border-b border-gray-200 shadow-sm">
+    <header className="fixed top-0 left-0 right-0 z-50 w-full bg-white border-b border-gray-200 shadow-sm">
       <div className="container mx-auto px-4 h-16 md:h-20 flex items-center justify-between">
         
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
           {logoUrl ? (
             <img 
-              src={logoUrl} 
+              src={getOptimizedImageUrl(logoUrl, 120, 32)} 
               alt={siteName || "Logo"} 
               width={120}
               height={32}
               className="h-8 w-auto max-w-[120px] object-contain"
+              style={{ maxWidth: '120px', height: 'auto' }}
               loading="lazy"
               sizes="(max-width: 768px) 80px, 120px"
+              decoding="async"
             />
           ) : (
           <GraduationCap className="w-6 h-6 md:w-8 md:h-8 text-[#1A73E8]" />

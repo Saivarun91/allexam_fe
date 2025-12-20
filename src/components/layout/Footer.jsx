@@ -8,6 +8,7 @@ import { useSiteName } from "@/hooks/useSiteName";
 import { useContactDetails } from "@/hooks/useContactDetails";
 import { useLogoUrl } from "@/hooks/useLogoUrl";
 import { getExamUrl } from "@/lib/utils";
+import { getOptimizedImageUrl } from "@/utils/imageUtils";
 
 /**
  * Footer Component
@@ -305,13 +306,15 @@ const Footer = () => {
           <div className="flex items-center gap-2">
             {logoUrl ? (
               <img 
-                src={logoUrl} 
+                src={getOptimizedImageUrl(logoUrl, 100, 24)} 
                 alt={siteName || "Logo"} 
                 width={100}
                 height={24}
                 className="h-6 w-auto max-w-[100px] object-contain"
+                style={{ maxWidth: '100px', height: 'auto' }}
                 loading="lazy"
                 sizes="(max-width: 768px) 80px, 100px"
+                decoding="async"
               />
             ) : (
             <GraduationCap className="w-5 h-5 md:w-6 md:h-6 text-[#1A73E8]" />

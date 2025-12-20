@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { getOptimizedImageUrl } from "@/utils/imageUtils";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
@@ -158,16 +159,18 @@ const BlogSection = () => {
                       >
                         {/* Blog Image */}
                         {article.image_url ? (
-                          <div className="relative w-full aspect-[16/9] overflow-hidden">
+                          <div className="relative w-full aspect-[16/9] overflow-hidden bg-gray-100">
                             <img
-                              src={article.image_url}
+                              src={getOptimizedImageUrl(article.image_url, 400, 225)}
                               alt={article.meta_title || article.title}
                               title={article.meta_title || article.title}
                               width={400}
                               height={225}
-                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                              className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
+                              style={{ objectFit: 'contain' }}
                               loading="lazy"
                               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px"
+                              decoding="async"
                               onError={(e) => {
                                 e.target.src = 'https://via.placeholder.com/400x300/1A73E8/ffffff?text=Blog+Post';
                               }}

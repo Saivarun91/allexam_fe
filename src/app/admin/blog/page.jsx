@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getOptimizedImageUrl } from "@/utils/imageUtils";
 
 export default function AdminBlogPage() {
   const [blogs, setBlogs] = useState([]);
@@ -281,15 +282,17 @@ export default function AdminBlogPage() {
               <Input type="file" accept="image/*" onChange={handleImageUpload} />
               {uploading && <p className="text-sm text-blue-500">Uploading...</p>}
               {formData.image_url && (
-                <div className="mt-2 w-full aspect-[16/9] rounded-md overflow-hidden">
+                <div className="mt-2 w-full aspect-[16/9] rounded-md overflow-hidden bg-gray-100">
                   <img 
-                    src={formData.image_url} 
+                    src={getOptimizedImageUrl(formData.image_url, 600, 338)} 
                     alt="Blog image preview"
                     width={600}
                     height={338}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
+                    style={{ objectFit: 'contain' }}
                     loading="lazy"
                     sizes="(max-width: 768px) 100vw, 600px"
+                    decoding="async"
                   />
                 </div>
               )}
@@ -321,15 +324,17 @@ export default function AdminBlogPage() {
             <Card key={blog.id} className="shadow-md">
               <CardContent className="p-4">
                 {blog.image_url ? (
-                  <div className="w-full aspect-[16/9] rounded-md overflow-hidden mb-3">
+                  <div className="w-full aspect-[16/9] rounded-md overflow-hidden mb-3 bg-gray-100">
                     <img 
-                      src={blog.image_url} 
+                      src={getOptimizedImageUrl(blog.image_url, 600, 338)} 
                       alt={blog.title || "Blog image"}
                       width={600}
                       height={338}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
+                      style={{ objectFit: 'contain' }}
                       loading="lazy"
                       sizes="(max-width: 768px) 100vw, 600px"
+                      decoding="async"
                     />
                   </div>
                 ) : (

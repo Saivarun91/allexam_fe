@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useSiteName } from "@/hooks/useSiteName";
 import { useLogoUrl } from "@/hooks/useLogoUrl";
+import { getOptimizedImageUrl } from "@/utils/imageUtils";
 import {
   Home,
   Layers,
@@ -70,13 +71,15 @@ export default function AdminSidebar() {
           <div className="flex items-center gap-3">
             {logoUrl ? (
               <img 
-                src={logoUrl} 
+                src={getOptimizedImageUrl(logoUrl, 140, 40)} 
                 alt={siteName || "Logo"} 
                 width={140}
                 height={40}
                 className="h-10 w-auto max-w-[140px] object-contain"
+                style={{ maxWidth: '140px', height: 'auto' }}
                 loading="lazy"
                 sizes="140px"
+                decoding="async"
               />
             ) : (
             <GraduationCap className="w-8 h-8 text-[#1A73E8]" />

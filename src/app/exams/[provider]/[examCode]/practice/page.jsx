@@ -44,8 +44,10 @@ export default function PracticePage() {
   };
 
   // Handle Start Test button click
-  const handleStartTest = (testId) => {
-    const testUrl = `/exams/${provider}/${examCode}/practice/${testId}`;
+  const handleStartTest = (test) => {
+    // Use slug if available, otherwise fallback to id or index
+    const testIdentifier = test.slug || test.id || test;
+    const testUrl = `/exams/${provider}/${examCode}/practice/${testIdentifier}`;
     
     if (!checkLogin()) {
       setPendingTestUrl(testUrl);
@@ -352,9 +354,9 @@ console.log("practice exams :",practiceTests)
                   <Badge className="bg-[#1A73E8] text-white border-0 mb-4">Full-Length Test</Badge>
                   <Button
                     className="w-full bg-[#1A73E8] text-white hover:bg-[#1557B0]"
-                    onClick={() => handleStartTest(test.id || index + 1)}
+                    onClick={() => handleStartTest(test)}
                   >
-                      Start Test →
+                    Start Test →
                   </Button>
                 </CardContent>
               </Card>

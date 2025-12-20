@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
@@ -213,19 +214,31 @@ export default function TestPlayerPage() {
     return isEnrolled || questionNum <= FREE_QUESTIONS_LIMIT;
   };
 
-  const handleAnswerChange = (optionText, checked) => {
+  const handleAnswerChange = (optionText, checked = null) => {
     if (!canAccessQuestion(currentQuestion)) return;
     
-    const currentAnswers = answers[currentQuestion] || [];
-    let newAnswers;
+    const currentQuestionData = questions[currentQuestion - 1];
+    const isSingle = currentQuestionData?.question_type === "single";
     
-    if (checked) {
-      newAnswers = [...currentAnswers, optionText];
+    if (isSingle) {
+      // For single choice, just set the value directly
+      setAnswers({ ...answers, [currentQuestion]: optionText });
     } else {
-      newAnswers = currentAnswers.filter(ans => ans !== optionText);
+      // For multiple choice, handle array
+      const currentAnswers = Array.isArray(answers[currentQuestion]) ? answers[currentQuestion] : [];
+      let newAnswers;
+      
+      if (checked === null) {
+        // Called from RadioGroup (single value)
+        newAnswers = [optionText];
+      } else if (checked) {
+        newAnswers = [...currentAnswers, optionText];
+      } else {
+        newAnswers = currentAnswers.filter(ans => ans !== optionText);
+      }
+      
+      setAnswers({ ...answers, [currentQuestion]: newAnswers });
     }
-    
-    setAnswers({ ...answers, [currentQuestion]: newAnswers });
   };
 
   const handleNext = () => {
@@ -274,7 +287,12 @@ export default function TestPlayerPage() {
       const qNum = parseInt(q);
       if (qNum > limit) return false;
       const answer = answers[q];
-      return answer && (Array.isArray(answer) ? answer.length > 0 : answer !== "");
+      if (!answer) return false;
+      // Handle both single (string) and multiple (array) answer formats
+      if (Array.isArray(answer)) {
+        return answer.length > 0;
+      }
+      return answer !== "" && answer !== null;
     }).length;
   };
 
@@ -320,13 +338,14 @@ export default function TestPlayerPage() {
         const question = accessibleQuestions[i];
         const questionId = question.id || question._id || question.question_id;
         const questionNum = i + 1;
-        const userAnswer = answers[questionNum] || [];
+        const userAnswer = answers[questionNum];
         
         if (!questionId) continue;
         
+        // Handle both single (string) and multiple (array) answer formats
         const selectedAnswers = Array.isArray(userAnswer) 
           ? userAnswer.map(ans => String(ans))
-          : userAnswer ? [String(userAnswer)] : [];
+          : (userAnswer && userAnswer !== "") ? [String(userAnswer)] : [];
 
         userAnswers.push({
           question_id: String(questionId),
@@ -520,14 +539,21 @@ export default function TestPlayerPage() {
   const practiceTests = exam.practice_tests_list || [];
   let currentTest = null;
   
-  // Try to find test by ID first
+  // Try to find test by slug first (SEO-friendly)
   if (practiceTests.length > 0) {
     currentTest = practiceTests.find(t => {
-      const testIdStr = String(t.id || t._id || '');
-      return testIdStr === String(testId);
+      return t.slug === testId;
     });
     
-    // If not found by ID, try by index (testId is 1-based)
+    // If not found by slug, try by ID
+    if (!currentTest) {
+      currentTest = practiceTests.find(t => {
+        const testIdStr = String(t.id || t._id || '');
+        return testIdStr === String(testId);
+      });
+    }
+    
+    // If not found by ID, try by index (testId is 1-based) for backward compatibility
     if (!currentTest && testId) {
       const testIndex = parseInt(testId) - 1;
       if (testIndex >= 0 && testIndex < practiceTests.length) {
@@ -790,7 +816,10 @@ export default function TestPlayerPage() {
 
   // Test in progress
   const currentQuestionData = questions[currentQuestion - 1];
-  const currentAnswer = answers[currentQuestion] || [];
+  const isSingleChoice = currentQuestionData?.question_type === "single";
+  const currentAnswer = isSingleChoice 
+    ? (answers[currentQuestion] || "") 
+    : (Array.isArray(answers[currentQuestion]) ? answers[currentQuestion] : []);
   const totalQuestions = questions.length;
   const accessibleQuestions = isEnrolled ? totalQuestions : Math.min(FREE_QUESTIONS_LIMIT, totalQuestions);
   const answeredCount = getAnsweredCount();
@@ -877,8 +906,9 @@ export default function TestPlayerPage() {
             <div className="grid grid-cols-5 gap-2">
               {Array.from({ length: totalQuestions }, (_, idx) => {
                 const qNum = idx + 1;
-                const isAnswered = answers[qNum] && (
-                  Array.isArray(answers[qNum]) ? answers[qNum].length > 0 : answers[qNum] !== ""
+                const answer = answers[qNum];
+                const isAnswered = answer && (
+                  Array.isArray(answer) ? answer.length > 0 : (answer !== "" && answer !== null)
                 );
                 const isCurrent = qNum === currentQuestion;
                 const isLocked = !canAccessQuestion(qNum);
@@ -966,31 +996,62 @@ export default function TestPlayerPage() {
 
               {/* Answer Options */}
               <div className="space-y-3">
-                {options.map((option, idx) => {
-                  const optionText = option.text || option;
-                  const optionValue = option.value || String.fromCharCode(65 + idx);
-                  const isChecked = Array.isArray(currentAnswer) && currentAnswer.includes(optionText);
+                {isSingleChoice ? (
+                  <RadioGroup
+                    value={currentAnswer || ""}
+                    onValueChange={(value) => handleAnswerChange(value)}
+                  >
+                    {options.map((option, idx) => {
+                      const optionText = option.text || option;
+                      const optionValue = option.value || String.fromCharCode(65 + idx);
 
-                  return (
-                    <div
-                      key={idx}
-                      className="flex items-start space-x-3 p-4 border border-gray-200 rounded-lg hover:border-[#1A73E8]/50 transition-colors bg-white"
-                    >
-                      <Checkbox
-                        id={`option-${idx}`}
-                        checked={isChecked}
-                        onCheckedChange={(checked) => handleAnswerChange(optionText, checked)}
-                        className="mt-1"
-                      />
-                      <Label
-                        htmlFor={`option-${idx}`}
-                        className="flex-1 cursor-pointer text-[#0C1A35] text-base leading-relaxed"
+                      return (
+                        <div
+                          key={idx}
+                          className="flex items-start space-x-3 p-4 border border-gray-200 rounded-lg hover:border-[#1A73E8]/50 transition-colors bg-white"
+                        >
+                          <RadioGroupItem
+                            value={optionText}
+                            id={`option-${idx}`}
+                            className="mt-1"
+                          />
+                          <Label
+                            htmlFor={`option-${idx}`}
+                            className="flex-1 cursor-pointer text-[#0C1A35] text-base leading-relaxed"
+                          >
+                            {optionValue}) {optionText}
+                          </Label>
+                        </div>
+                      );
+                    })}
+                  </RadioGroup>
+                ) : (
+                  options.map((option, idx) => {
+                    const optionText = option.text || option;
+                    const optionValue = option.value || String.fromCharCode(65 + idx);
+                    const isChecked = Array.isArray(currentAnswer) && currentAnswer.includes(optionText);
+
+                    return (
+                      <div
+                        key={idx}
+                        className="flex items-start space-x-3 p-4 border border-gray-200 rounded-lg hover:border-[#1A73E8]/50 transition-colors bg-white"
                       >
-                        {optionValue}) {optionText}
-                      </Label>
-                    </div>
-                  );
-                })}
+                        <Checkbox
+                          id={`option-${idx}`}
+                          checked={isChecked}
+                          onCheckedChange={(checked) => handleAnswerChange(optionText, checked)}
+                          className="mt-1"
+                        />
+                        <Label
+                          htmlFor={`option-${idx}`}
+                          className="flex-1 cursor-pointer text-[#0C1A35] text-base leading-relaxed"
+                        >
+                          {optionValue}) {optionText}
+                        </Label>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
           </div>

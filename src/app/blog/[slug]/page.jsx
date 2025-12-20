@@ -7,6 +7,7 @@ import { ArrowLeft, Calendar, User, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import BlogJsonLd from "@/components/BlogJsonLd";
+import { getOptimizedImageUrl } from "@/utils/imageUtils";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
@@ -157,15 +158,17 @@ export default function BlogDetailPage() {
           </div>
 
           {blog.image_url && (
-            <div className="relative w-full aspect-[16/9] mb-8 rounded-lg overflow-hidden">
+            <div className="relative w-full aspect-[16/9] mb-8 rounded-lg overflow-hidden bg-gray-100">
               <img
-                src={blog.image_url}
+                src={getOptimizedImageUrl(blog.image_url, 1200, 675)}
                 alt={blog.title}
                 width={1200}
                 height={675}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
+                style={{ objectFit: 'contain' }}
                 loading="lazy"
-                sizes="(max-width: 768px) 100vw, 1200px"
+                sizes="(max-width: 768px) 100vw, (max-width: 1024px) 90vw, 1200px"
+                decoding="async"
                 onError={(e) => {
                   e.target.src = 'https://via.placeholder.com/800x400/1A73E8/ffffff?text=Blog+Post';
                 }}

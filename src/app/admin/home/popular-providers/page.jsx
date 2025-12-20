@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/table";
 import { Plus, Edit, Trash2, Eye, Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { getOptimizedImageUrl } from "@/utils/imageUtils";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
@@ -672,13 +673,15 @@ export default function PopularProvidersAdmin() {
                     <TableCell>
                       {provider.logo_url ? (
                         <img 
-                          src={provider.logo_url} 
+                          src={getOptimizedImageUrl(provider.logo_url, 48, 48)} 
                           alt={provider.name}
                           width={48}
                           height={48}
                           className="w-12 h-12 object-contain border border-gray-200 rounded p-1 bg-white"
+                          style={{ maxWidth: '48px', maxHeight: '48px', width: '48px', height: '48px' }}
                           loading="lazy"
                           sizes="48px"
+                          decoding="async"
                           onError={(e) => {
                             e.target.style.display = 'none';
                             e.target.nextSibling.style.display = 'inline';
@@ -745,13 +748,15 @@ export default function PopularProvidersAdmin() {
                 >
                   {provider.logo_url ? (
                     <img 
-                      src={provider.logo_url} 
+                      src={getOptimizedImageUrl(provider.logo_url, 64, 64)} 
                       alt={provider.name}
                       width={64}
                       height={64}
                       className="w-16 h-16 object-contain"
+                      style={{ maxWidth: '64px', maxHeight: '64px', width: '64px', height: '64px' }}
                       loading="lazy"
                       sizes="64px"
+                      decoding="async"
                       onError={(e) => {
                         // Fallback to icon if logo fails to load
                         e.target.style.display = 'none';

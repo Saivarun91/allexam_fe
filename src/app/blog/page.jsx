@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Calendar, User, Clock } from "lucide-react";
 import Link from "next/link";
+import { getOptimizedImageUrl } from "@/utils/imageUtils";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
@@ -98,15 +99,17 @@ export default function BlogPage() {
                   <Link key={article.id} href={blogUrl} className="block group">
                     <Card className="overflow-hidden hover:shadow-[0_6px_20px_rgba(26,115,232,0.15)] hover:-translate-y-1 transition-all duration-300 border-[#DDE7FF] cursor-pointer bg-white shadow-[0_2px_8px_rgba(26,115,232,0.08)] h-full flex flex-col">
                       {article.image_url ? (
-                        <div className="relative w-full aspect-[16/9] overflow-hidden">
+                        <div className="relative w-full aspect-[16/9] overflow-hidden bg-gray-100">
                 <img
-                            src={article.image_url}
+                            src={getOptimizedImageUrl(article.image_url, 400, 225)}
                   alt={article.title}
                             width={400}
                             height={225}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                            style={{ objectFit: 'contain' }}
                             loading="lazy"
                             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px"
+                            decoding="async"
                             onError={(e) => {
                               e.target.src = 'https://via.placeholder.com/400x300/1A73E8/ffffff?text=Blog+Post';
                             }}

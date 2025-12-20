@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { PlusCircle, Edit, Trash2, Search, ArrowLeft } from "lucide-react";
 import { checkAuth, getAuthHeaders } from "@/utils/authCheck";
+import { getOptimizedImageUrl } from "@/utils/imageUtils";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
@@ -325,13 +326,15 @@ export default function AdminProvidersPage() {
                           <div className="flex items-center gap-3">
                             {provider.logo_url && (
                               <img 
-                                src={provider.logo_url} 
+                                src={getOptimizedImageUrl(provider.logo_url, 32, 32)} 
                                 alt={provider.name}
                                 width={32}
                                 height={32}
                                 className="w-8 h-8 object-contain rounded"
+                                style={{ maxWidth: '32px', maxHeight: '32px', width: '32px', height: '32px' }}
                                 loading="lazy"
                                 sizes="32px"
+                                decoding="async"
                               />
                             )}
                             <span className="font-medium text-gray-900">{provider.name}</span>

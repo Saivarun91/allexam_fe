@@ -47,14 +47,16 @@ function LoginPageContent() {
   // Google Sign-In
   const [showGoogleDialog, setShowGoogleDialog] = useState(false);
 
-  // Load Google Identity Services script
+  // Load Google Identity Services script (non-blocking)
   useEffect(() => {
     if (typeof window !== 'undefined' && !window.google) {
       const script = document.createElement('script');
       script.src = 'https://accounts.google.com/gsi/client';
       script.async = true;
       script.defer = true;
-      document.head.appendChild(script);
+      script.loading = 'lazy';
+      // Add to body instead of head to avoid blocking
+      document.body.appendChild(script);
     }
   }, []);
 

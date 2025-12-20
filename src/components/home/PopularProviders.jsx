@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, useAnimationControls } from "framer-motion";
+import { getOptimizedImageUrl } from "@/utils/imageUtils";
 
 // Import icons
 import {
@@ -185,14 +186,15 @@ export default function PopularProviders() {
                     <div className="flex items-center justify-center" style={{ height: `${logoSize}px`, width: `${logoSize}px` }}>
                       {hasLogo ? (
                         <img 
-                          src={provider.logo_url} 
+                          src={getOptimizedImageUrl(provider.logo_url, logoSize, logoSize)} 
                           alt={provider.name}
                           width={logoSize}
                           height={logoSize}
                           className="object-contain"
-                          style={{ maxWidth: `${logoSize}px`, maxHeight: `${logoSize}px` }}
+                          style={{ maxWidth: `${logoSize}px`, maxHeight: `${logoSize}px`, width: `${logoSize}px`, height: `${logoSize}px` }}
                           loading="lazy"
                           sizes={`${logoSize}px`}
+                          decoding="async"
                           onError={(e) => {
                             // Fallback to icon if logo fails to load
                             e.target.style.display = 'none';

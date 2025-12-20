@@ -91,64 +91,149 @@ export default function TestReview() {
               const questionNum = idx + 1;
               const userAnswer = userAnswers[questionNum];
               
-              // Check if answer is correct by comparing with correct_answer
-              let isCorrect = false;
-              if (userAnswer !== undefined && userAnswer !== null && q.correct_answer) {
+              // Handle both single answer and multiple choice
+              let userAnswerValue = null;
+              if (userAnswer !== undefined && userAnswer !== null) {
                 if (Array.isArray(userAnswer)) {
-                  const correctArray = Array.isArray(q.correct_answer) ? q.correct_answer : [q.correct_answer];
-                  isCorrect = JSON.stringify(userAnswer.sort()) === JSON.stringify(correctArray.sort());
-                } else {
-                  isCorrect = String(userAnswer).trim() === String(q.correct_answer).trim();
+                  userAnswerValue = userAnswer.length > 0 ? userAnswer : null;
+                } else if (userAnswer !== '' && userAnswer !== 'null' && userAnswer !== 'undefined') {
+                  userAnswerValue = userAnswer;
                 }
               }
               
-              // Get topic from question tags or use default distribution
-              const topic = q.tags && q.tags.length > 0 
-                ? q.tags[0] 
-                : q.topic 
-                || (idx < Math.floor(questions.length * 0.3) ? "Core Concepts"
+              // Check if answer is correct by comparing with correct_answers
+              // Use the same logic as the review answers page for consistency
+              let isCorrect = false;
+              let isUnanswered = userAnswerValue === null || userAnswerValue === undefined;
+              
+              if (!isUnanswered) {
+                const correctAnswers = q.correct_answers || (q.correct_answer ? [q.correct_answer] : []);
+                
+                if (correctAnswers.length > 0) {
+                  // Normalize both user answer and correct answers to option text for comparison
+                  // Get options list to help with normalization
+                  let optionsList = [];
+                  if (q.options && Array.isArray(q.options) && q.options.length > 0) {
+                    optionsList = q.options.map((opt, optIdx) => ({
+                      index: optIdx,
+                      letter: String.fromCharCode(65 + optIdx),
+                      text: typeof opt === 'string' ? opt : (opt.text || opt.label || opt.value || '')
+                    }));
+                  }
+                  
+                  // Helper function to normalize answer to option text
+                  const normalizeToOptionText = (answer) => {
+                    const answerStr = String(answer).trim();
+                    if (optionsList.length > 0) {
+                      // Try to find matching option by text, index, or letter
+                      const matchedOpt = optionsList.find(opt => {
+                        const optText = String(opt.text).trim();
+                        return optText === answerStr || 
+                               optText.toLowerCase() === answerStr.toLowerCase() ||
+                               String(opt.index) === answerStr ||
+                               opt.letter.toUpperCase() === answerStr.toUpperCase();
+                      });
+                      return matchedOpt ? matchedOpt.text : answerStr;
+                    }
+                    return answerStr;
+                  };
+                  
+                  if (Array.isArray(userAnswerValue)) {
+                    // Multiple choice - normalize both arrays to option texts and compare
+                    const userAnswerTexts = userAnswerValue.map(normalizeToOptionText).map(a => String(a).trim().toLowerCase()).sort();
+                    const correctAnswerTexts = correctAnswers.map(normalizeToOptionText).map(a => String(a).trim().toLowerCase()).sort();
+                    isCorrect = JSON.stringify(userAnswerTexts) === JSON.stringify(correctAnswerTexts);
+                  } else {
+                    // Single choice - normalize both to option text and compare (case-insensitive)
+                    const userAnswerText = normalizeToOptionText(userAnswerValue).toLowerCase().trim();
+                    isCorrect = correctAnswers.some(ca => {
+                      const correctAnswerText = normalizeToOptionText(ca).toLowerCase().trim();
+                      return correctAnswerText === userAnswerText;
+                    });
+                  }
+                }
+              }
+              
+              // Get topic from question tags, domain, or use default distribution
+              let topic = "Other";
+              
+              // Try to get topic from tags (array of strings)
+              if (q.tags && Array.isArray(q.tags) && q.tags.length > 0) {
+                // Get first non-empty tag
+                const firstTag = q.tags.find(tag => tag && String(tag).trim() !== '');
+                if (firstTag) {
+                  topic = String(firstTag).trim();
+                }
+              }
+              
+              // Fallback to domain field if tags not available
+              if (topic === "Other" && q.domain && String(q.domain).trim() !== '') {
+                topic = String(q.domain).trim();
+              }
+              
+              // Fallback to topic field if available
+              if (topic === "Other" && q.topic && String(q.topic).trim() !== '') {
+                topic = String(q.topic).trim();
+              }
+              
+              // Final fallback: use default distribution only if no tags/domain/topic found
+              if (topic === "Other") {
+                topic = idx < Math.floor(questions.length * 0.3) ? "Core Concepts"
                     : idx < Math.floor(questions.length * 0.55) ? "Advanced Topics"
                     : idx < Math.floor(questions.length * 0.8) ? "Best Practices"
-                    : "Implementation");
+                    : "Implementation";
+              }
               
+              // Initialize topic in map if not exists
               if (!topicMap[topic]) {
                 topicMap[topic] = { correct: 0, total: 0 };
               }
               
+              // Increment counters
               topicMap[topic].total++;
               if (isCorrect) {
                 topicMap[topic].correct++;
               }
             });
             
-            // Convert to array format
-            const performance = Object.entries(topicMap).map(([topic, stats]) => ({
-              topic,
-              correct: stats.correct,
-              total: stats.total,
-              percentage: stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0
-            }));
+            // Convert to array format and sort by topic name
+            const performance = Object.entries(topicMap)
+              .map(([topic, stats]) => ({
+                topic,
+                correct: stats.correct,
+                total: stats.total,
+                percentage: stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0
+              }))
+              .sort((a, b) => {
+                // Sort by topic name alphabetically
+                return a.topic.localeCompare(b.topic);
+              });
             
             setTopicPerformance(performance.length > 0 ? performance : [
-              { topic: "Overall", correct: results.correctAnswers, total: results.questionsCompleted, percentage: results.questionsCompleted > 0 ? Math.round((results.correctAnswers / results.questionsCompleted) * 100) : 0 }
+              { 
+                topic: "Overall", 
+                correct: results.correctAnswers || 0, 
+                total: results.questionsCompleted || 0, 
+                percentage: (results.questionsCompleted || 0) > 0 ? Math.round(((results.correctAnswers || 0) / (results.questionsCompleted || 0)) * 100) : 0 
+              }
             ]);
           } catch (error) {
             console.error("Error calculating topic performance:", error);
             // Fallback to overall performance
             setTopicPerformance([{
               topic: "Overall",
-              correct: results.correctAnswers,
-              total: results.questionsCompleted,
-              percentage: results.questionsCompleted > 0 ? Math.round((results.correctAnswers / results.questionsCompleted) * 100) : 0
+              correct: results.correctAnswers || 0,
+              total: results.questionsCompleted || 0,
+              percentage: (results.questionsCompleted || 0) > 0 ? Math.round(((results.correctAnswers || 0) / (results.questionsCompleted || 0)) * 100) : 0
             }]);
           }
         } else {
           // No questions stored, use overall stats
           setTopicPerformance([{
             topic: "Overall",
-            correct: results.correctAnswers,
-            total: results.questionsCompleted,
-            percentage: results.questionsCompleted > 0 ? Math.round((results.correctAnswers / results.questionsCompleted) * 100) : 0
+            correct: results.correctAnswers || 0,
+            total: results.questionsCompleted || 0,
+            percentage: (results.questionsCompleted || 0) > 0 ? Math.round(((results.correctAnswers || 0) / (results.questionsCompleted || 0)) * 100) : 0
           }]);
         }
       } else {
@@ -170,12 +255,25 @@ export default function TestReview() {
   }
 
   const { questionsCompleted, totalQuestions, correctAnswers, incorrectAnswers, unanswered, timeTaken } = testResults;
-  const scorePercentage = questionsCompleted > 0 ? Math.round((correctAnswers / questionsCompleted) * 100) : 0;
-  const isPartialTest = questionsCompleted < totalQuestions;
+  
+  // Recalculate to ensure accuracy
+  const actualCorrectAnswers = correctAnswers || 0;
+  const actualIncorrectAnswers = incorrectAnswers || 0;
+  const actualUnanswered = unanswered || 0;
+  const actualCompleted = questionsCompleted || 0;
+  
+  // Verify calculations match
+  const verifiedCorrectAnswers = actualCorrectAnswers;
+  const verifiedIncorrectAnswers = actualIncorrectAnswers;
+  const verifiedUnanswered = actualUnanswered;
+  const verifiedCompleted = actualCompleted;
+  
+  const scorePercentage = verifiedCompleted > 0 ? Math.round((verifiedCorrectAnswers / verifiedCompleted) * 100) : 0;
+  const isPartialTest = verifiedCompleted < totalQuestions;
 
   // Use calculated topic performance or fallback to overall
   const displayTopicPerformance = topicPerformance.length > 0 ? topicPerformance : [
-    { topic: "Overall Performance", correct: correctAnswers, total: questionsCompleted, percentage: scorePercentage }
+    { topic: "Overall Performance", correct: verifiedCorrectAnswers, total: verifiedCompleted, percentage: scorePercentage }
   ];
 
   const handleRetakeTest = () => {
@@ -337,7 +435,7 @@ export default function TestReview() {
                 {scorePercentage >= 70 ? "Great Job!" : scorePercentage >= 50 ? "Good Effort!" : "Keep Practicing!"}
               </h2>
               <p className="text-[#0C1A35]/70">
-                You answered {questionsCompleted} out of {isPartialTest ? `${questionsCompleted} free` : totalQuestions} questions
+                You answered {verifiedCompleted} out of {isPartialTest ? `${verifiedCompleted} free` : totalQuestions} questions
               </p>
               {isPartialTest && (
                 <p className="text-yellow-600 font-semibold mt-2">
@@ -350,22 +448,22 @@ export default function TestReview() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               <div className="text-center p-4 rounded-lg bg-green-50 border border-green-200">
                 <CheckCircle className="w-6 h-6 text-green-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-green-700">{correctAnswers}</div>
+                <div className="text-2xl font-bold text-green-700">{verifiedCorrectAnswers}</div>
                 <div className="text-xs text-green-600">Correct</div>
               </div>
               <div className="text-center p-4 rounded-lg bg-red-50 border border-red-200">
                 <XCircle className="w-6 h-6 text-red-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-red-700">{incorrectAnswers}</div>
+                <div className="text-2xl font-bold text-red-700">{verifiedIncorrectAnswers}</div>
                 <div className="text-xs text-red-600">Incorrect</div>
               </div>
               <div className="text-center p-4 rounded-lg bg-blue-50 border border-blue-200">
                 <Clock className="w-6 h-6 text-blue-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-blue-700">{timeTaken}</div>
+                <div className="text-2xl font-bold text-blue-700">{timeTaken || '0:00'}</div>
                 <div className="text-xs text-blue-600">Time Taken</div>
               </div>
               <div className="text-center p-4 rounded-lg bg-purple-50 border border-purple-200">
                 <List className="w-6 h-6 text-purple-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-purple-700">{questionsCompleted}/{totalQuestions}</div>
+                <div className="text-2xl font-bold text-purple-700">{verifiedCompleted}/{totalQuestions}</div>
                 <div className="text-xs text-purple-600">Completed</div>
               </div>
             </div>
